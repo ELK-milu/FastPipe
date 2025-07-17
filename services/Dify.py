@@ -1,8 +1,9 @@
 import aiohttp
+import httpx
 import requests
 import json
 
-def SetSessionConfig(key:str,session: aiohttp.ClientSession)->aiohttp.ClientSession:
+def SetSessionConfig(key:str,session: httpx.AsyncClient)->httpx.AsyncClient:
     session.headers.update({
         'Authorization': f'Bearer {key}',
         'Content-Type': 'application/json',

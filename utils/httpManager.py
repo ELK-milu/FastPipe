@@ -2,6 +2,8 @@
 import aiohttp
 import asyncio
 import time
+
+import httpx
 from loguru import logger
 from typing import Dict, Optional, Any, List
 from dataclasses import dataclass, field
@@ -69,64 +71,52 @@ class UserStats:
         }
 
 
-class HTTPSessionManager():
-    """优化后的HTTP连接管理器"""
+class HTTPSessionManager:
+    """基于 httpx 的异步连接管理器"""
 
-    def __init__(self,
-                 base_url: str = "https://api.openai.com/v1",
-                 max_concurrent_requests: int = 100,
-                 request_timeout: int = 300,
-                 max_requests_per_user: int = 10,
-                 connector_limit: int = 100):
-        """
-        初始化会话管理器
-        """
+    def __init__(
+            self,
+            base_url: str = "http://192.168.30.46",
+            timeout: float = 300.0,
+            max_connections: int = 100,
+            max_keepalive_connections: int = 50
+    ):
         self._base_url = base_url
-        self._max_concurrent_requests = max_concurrent_requests
-        self._request_timeout = request_timeout
-        self._max_requests_per_user = max_requests_per_user
-        self._connector_limit = connector_limit
-
-        # 共享的HTTP session
-        self._session: Optional[aiohttp.ClientSession] = None
-        self._session_lock = asyncio.Lock()
-
-        # 请求管理 - 使用defaultdict和线程安全的用户统计
+        self._timeout = timeout
+        self._client: Optional[httpx.AsyncClient] = None
         self._user_stats: Dict[str, UserStats] = {}
+        self._lock = asyncio.Lock()
 
-        # 日志
-        self._logger = logger
+        # 连接池配置
+        self._limits = httpx.Limits(
+            max_connections=max_connections,
+            max_keepalive_connections=max_keepalive_connections
+        )
+        asyncio.run(self.get_client())
 
-    async def _initialize_session(self):
-        """初始化共享的HTTP session"""
-        async with self._session_lock:
-            if self._session is None:
-                connector = aiohttp.TCPConnector(
-                    limit=100,  # 总连接数限制
-                    limit_per_host=50,  # 对单个主机的连接数限制
-                    force_close=False,  # 允许连接重用
-                    enable_cleanup_closed=True,  # 自动清理关闭的连接
-                    keepalive_timeout=30  # 保持连接时间
-                )
+    async def get_client(self) -> httpx.AsyncClient:
+        """获取共享的异步客户端（依赖注入用）"""
+        if self._client is None:
+            async with self._lock:
+                if self._client is None:
+                    self._client = httpx.AsyncClient(
+                        base_url=self._base_url,
+                        timeout=self._timeout,
+                        limits=self._limits,
+                        headers={
+                            'User-Agent': 'LLM-Proxy-Server/1.0',
+                            'Content-Type': 'application/json'
+                        }
+                    )
+                    logger.info("HTTPX 客户端初始化完成")
+        return self._client
 
-                timeout = aiohttp.ClientTimeout(total=self._request_timeout)
-
-                self._session = aiohttp.ClientSession(
-                    connector=connector,
-                    timeout=timeout,
-                    headers={
-                        'User-Agent': 'LLM-Proxy-Server/1.0',
-                        'Content-Type': 'application/json'
-                    }
-                )
-
-                self._logger.info("初始化共享HTTP session成功")
-
-    async def get_session(self) -> aiohttp.ClientSession:
-        """获取共享的HTTP session - 带重试机制"""
-        if self._session is None or self._session.closed:
-            await self._initialize_session()
-        return self._session
+    async def close(self):
+        """关闭客户端"""
+        if self._client:
+            await self._client.aclose()
+            self._client = None
+            logger.info("HTTPX 客户端已关闭")
 
     def if_user_exist(self, user_id: str) -> bool:
         """检查用户是否存在"""
@@ -148,10 +138,3 @@ class HTTPSessionManager():
         else:
             raise ValueError(f"用户不存在: {user_id}")
 
-    async def close_session(self):
-        """关闭共享session"""
-        async with self._session_lock:
-            if self._session and not self._session.closed:
-                await self._session.close()
-                self._session = None
-                self._logger.info("共享HTTP session已关闭")
