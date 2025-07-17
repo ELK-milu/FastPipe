@@ -1,0 +1,2 @@
+2025-07-17 17:16:09.828 | INFO     | utils.httpManager:_initialize_session:124 - 初始化共享HTTP session成功
+2025-07-17 17:16:09.911 | ERROR    | services:wrapper:17 - Error in order_list: Connection closed
