@@ -1,3 +1,5 @@
+import asyncio
+import time
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -15,6 +17,14 @@ router = APIRouter(prefix='/test')
 
 httpSessionManager = HTTPSessionManager(base_url="http://192.168.30.46/v1/chat-messages")
 
+
+@router.get("/debug")
+async def debug(client: httpx.AsyncClient = Depends(httpSessionManager.get_client)):
+    # 方法1：通过实际请求检测
+    async with client.stream("GET", "https://httpbin.org/get") as response:
+        http_version = response.http_version  # 返回 "HTTP/1.1" 或 "HTTP/2"
+        print(http_version)
+
 @router.get('/stream')
 async def stream(client: httpx.AsyncClient = Depends(httpSessionManager.get_client)):
     # 配置会话和请求参数
@@ -28,13 +38,19 @@ async def stream(client: httpx.AsyncClient = Depends(httpSessionManager.get_clie
                 'http://192.168.30.46/v1/chat-messages',
                 json=payload,
                 timeout=300.0  # httpx 的超时单位为秒
-            ) as response:
-                async for chunk in response.aiter_bytes():
+            ) as response :
+                start_time = time.time()
+                #logger.info(f"{start_time}开始发送请求")
+                async for chunk in response.aiter_bytes(chunk_size=1024):
                     if chunk:
                         yield chunk
+                    await asyncio.sleep(0)  # 主动释放事件循环控制权
         except Exception as e:
             logger.error(f"Stream error: {str(e)}")
             raise
+        finally:
+            final_time =  time.time()
+            #logger.info(f"{final_time}请求结束,耗时:{final_time-start_time}s")
 
     return StreamingResponse(
         generate(),

@@ -40,26 +40,6 @@ class UserStats:
 
     def __init__(self, user_id: str):
         self.user_id = user_id
-        self.total_requests = ThreadSafeCounter()
-        self.active_requests = ThreadSafeCounter()
-        self._last_request_time = time.time()
-        self._time_lock = threading.Lock()
-
-    def update_request_start(self):
-        """更新请求开始统计"""
-        self.active_requests.increment()
-        self.total_requests.increment()
-        with self._time_lock:
-            self._last_request_time = time.time()
-
-    def update_request_end(self):
-        """更新请求结束统计"""
-        self.active_requests.decrement()
-
-    @property
-    def last_request_time(self) -> float:
-        with self._time_lock:
-            return self._last_request_time
 
     def to_dict(self) -> Dict[str, Any]:
         """转换为字典格式"""
@@ -78,8 +58,9 @@ class HTTPSessionManager:
             self,
             base_url: str = "http://192.168.30.46",
             timeout: float = 300.0,
-            max_connections: int = 100,
-            max_keepalive_connections: int = 50
+            max_connections: int = 500,
+            max_keepalive_connections: int = 200,
+            keepalive_expiry :int= 60  # 保活时间（秒）
     ):
         self._base_url = base_url
         self._timeout = timeout
@@ -87,11 +68,15 @@ class HTTPSessionManager:
         self._user_stats: Dict[str, UserStats] = {}
         self._lock = asyncio.Lock()
 
+        self._keepalive_expiry = 60
+
         # 连接池配置
         self._limits = httpx.Limits(
             max_connections=max_connections,
-            max_keepalive_connections=max_keepalive_connections
+            max_keepalive_connections=max_keepalive_connections,
+            keepalive_expiry = keepalive_expiry  # 保活时间（秒）
         )
+
         asyncio.run(self.get_client())
 
     async def get_client(self) -> httpx.AsyncClient:
@@ -100,11 +85,11 @@ class HTTPSessionManager:
             async with self._lock:
                 if self._client is None:
                     self._client = httpx.AsyncClient(
+                        http2=True,  # 需安装 httpx[http2]
                         base_url=self._base_url,
                         timeout=self._timeout,
                         limits=self._limits,
                         headers={
-                            'User-Agent': 'LLM-Proxy-Server/1.0',
                             'Content-Type': 'application/json'
                         }
                     )
@@ -128,7 +113,7 @@ class HTTPSessionManager:
         """创建连接时调用，加入新用户统计"""
         if user_id not in self._user_stats:
             self._user_stats[user_id] = UserStats(user_id)
-            self._logger.info(f"新用户加入: {user_id}")
+            logger.info(f"新用户加入: {user_id}")
         return self._user_stats[user_id]
 
     async def _get_user_stats(self, user_id: str) -> UserStats:
