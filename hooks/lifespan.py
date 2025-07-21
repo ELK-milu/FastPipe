@@ -12,7 +12,6 @@ pipeline = PipeLine.create_pipeline(
     Dify_LLM_Module,
 )
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.add("logs/file_{time}.log", rotation="500 MB", enqueue=True, level="INFO")

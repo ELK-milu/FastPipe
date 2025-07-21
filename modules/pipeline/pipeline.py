@@ -70,9 +70,10 @@ class PipeLine:
                 )
 
     async def put_message(self, Message:AsyncQueueMessage):
+        # 此处不复用get_or_create_queue_context函数，因为put需要频繁调用，不需要每次都创建QueueRequestContext
         queue = await self.queue_manager.get_queue_by_request_id(Message.request_id)
         if queue:
-            print("向队列" + Message.request_id + "添加信息:" + Message.body)
+            #print("向队列" + Message.request_id + "添加信息:" + Message.body)
             await queue.put(Message)
         else:
             print("创建队列：" + Message.request_id)
@@ -86,15 +87,15 @@ class PipeLine:
     async def get_queue(self, request_id: str) -> Optional[AsyncMessageQueue]:
         return await self.queue_manager.get_queue_by_request_id(request_id)
 
-    async def _process_pipeline_stream(self,
-                                       queue_request: QueueRequestContext,
-                                       data_request: PipeLineRequest,
-                                       response_callback: Optional[Callable] = None):
-        test_message = ModuleMessage(type="str",
-                                     body="你好啊，介绍下你自己",
-                                     user="user",
-                                     request_id="user123")
-        await self.modules[0].ModuleEntry(test_message)
+    async def get_or_create_queue_by_context(self, context: QueueRequestContext) -> Optional[AsyncMessageQueue]:
+        queue =  await self.queue_manager.get_queue_by_request_id(context.request_id)
+        if queue:
+            pass
+        else:
+            print("创建队列：" + context.request_id)
+            queue = await self.queue_manager.create_queue_by_context(context)
+        return queue
+
 
     async def default_message_handler(self, message_body: str):
         """默认消息处理器"""

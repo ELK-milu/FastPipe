@@ -1,4 +1,6 @@
 import asyncio
+import time
+import uuid
 
 import uvicorn
 from fastapi import FastAPI
@@ -26,24 +28,23 @@ async def root():
     return {"message": "Hello World"}
 
 @app.post("/stream")
-async def concurrent_stream_response(request_id: PipeLineRequest):
+async def concurrent_stream_response(request: PipeLineRequest):
     """支持多个并发请求的流式响应"""
-
+    # 混合流需要重新封装下再输出
+    request_id = uuid.uuid4().hex
     # 为每个请求创建独立的队列
-    queue = await pipeline.queue_manager.create_queue_by_context(
-        QueueRequestContext(request_id="111", user_id="user")
+    queue = await pipeline.get_or_create_queue_by_context(
+        QueueRequestContext(request_id=request_id, user_id=request.user)
     )
-
     async def stream_generator():
         # 启动该请求的处理任务
         producer_task = asyncio.create_task(
-            pipeline.process_request("111")
+            pipeline.process_request(request_id)
         )
-
         try:
             async for message in queue.iterator():
                 if message:
-                    yield f"data: {message.body}\n\n"
+                    yield f"{message.body}"
 
                     # 检查结束标志
                     if hasattr(message, 'is_end') and message.is_end:
@@ -55,7 +56,7 @@ async def concurrent_stream_response(request_id: PipeLineRequest):
             # 清理任务和队列
             if not producer_task.done():
                 producer_task.cancel()
-            await pipeline.queue_manager.remove_queue("111")
+            await pipeline.queue_manager.remove_queue(request_id)
 
     return StreamingResponse(
         stream_generator(),
