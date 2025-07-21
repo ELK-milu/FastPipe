@@ -41,8 +41,10 @@ class AsyncQueueIterator:
             return message
 
         except asyncio.TimeoutError:
-            # 超时不算错误，继续等待
-            return await self.__anext__()
+            # 超时后立即重试，而不是递归调用
+            if not self._closed and not self.queue._closed:
+                return await self.__anext__()
+            raise StopAsyncIteration
 
     async def __aenter__(self):
         return self
@@ -54,22 +56,28 @@ class AsyncQueueIterator:
 class AsyncMessageQueue:
     """异步消息队列"""
 
-    def __init__(self, name: str = "test_queue", timeout: float = 10):
+    def __init__(self, name: str = "test_queue", timeout: float = 0.1):
         self.name = name
         self.timeout = timeout
         self._queue = asyncio.Queue()
         self._closed = False
         self._iterators = set()
+        self._message_ready= asyncio.Event()
 
     async def put(self, message: AsyncQueueMessage):
-        """向队列添加消息"""
+        """优化的消息放入方法"""
         if self._closed:
             raise RuntimeError("队列已关闭")
-        if self.name != message.request_id :
+        if self.name != message.request_id:
             raise RuntimeError("队列名称不匹配")
-        await self._queue.put(message)
+
+        # 立即放入消息，无需等待
+        self._queue.put_nowait(message)
+        self._message_ready.set()  # 立即通知有新消息
+        self._last_put_time = time.time()
 
     async def _get_message(self) -> Optional[AsyncQueueMessage]:
+        '''
         """内部方法：从队列获取消息"""
         if self._closed and self._queue.empty():
             return None
@@ -77,6 +85,38 @@ class AsyncMessageQueue:
             message = await self._queue.get()
             return message
         except Exception:
+            return None
+        '''
+        return await self._get_message_optimized()
+
+    async def _get_message_optimized(self) -> Optional[AsyncQueueMessage]:
+        """优化的消息获取方法"""
+        if self._closed and self._queue.empty():
+            return None
+
+        try:
+            # 优化5: 先尝试立即获取，避免不必要的等待
+            if not self._queue.empty():
+                message = self._queue.get_nowait()
+                return message
+
+            # 如果队列为空，等待消息就绪事件
+            try:
+                await asyncio.wait_for(self._message_ready.wait(), timeout=self.timeout)
+                self._message_ready.clear()  # 清除事件状态
+
+                if not self._queue.empty():
+                    message = self._queue.get_nowait()
+                    return message
+            except asyncio.TimeoutError:
+                pass
+
+            return None
+
+        except asyncio.QueueEmpty:
+            return None
+        except Exception as e:
+            print(f"获取消息时出错: {e}")
             return None
 
     def iterator(self) -> AsyncQueueIterator:
@@ -88,6 +128,7 @@ class AsyncMessageQueue:
     async def close(self):
         """关闭队列"""
         self._closed = True
+        self._message_ready.set()  # 通知所有等待者
 
         # 关闭所有迭代器
         for iterator in self._iterators:

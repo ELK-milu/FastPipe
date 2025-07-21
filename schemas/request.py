@@ -16,7 +16,3 @@ class PipeLineRequest(RequestModel):
     #max_length: int = 100
     conversation_id: str = ""
     message_id: str = ""
-
-    class Config:
-        # Allow additional properties (since additionalProperties is true)
-        extra = "allow"

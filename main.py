@@ -6,6 +6,7 @@ from starlette.responses import StreamingResponse
 
 from hooks.lifespan import lifespan
 from routers import seckill, Dify
+from schemas.request import PipeLineRequest
 from services import handle_streaming_http_exceptions
 from settings import FASTAPI_HOST, FASTAPI_PORT
 from hooks.lifespan import pipeline
@@ -24,19 +25,19 @@ app.include_router(Dify.router)
 async def root():
     return {"message": "Hello World"}
 
-@app.get("/stream/{request_id}")
-async def concurrent_stream_response(request_id: str):
+@app.post("/stream")
+async def concurrent_stream_response(request_id: PipeLineRequest):
     """支持多个并发请求的流式响应"""
 
     # 为每个请求创建独立的队列
     queue = await pipeline.queue_manager.create_queue_by_context(
-        QueueRequestContext(request_id=request_id, user_id="user")
+        QueueRequestContext(request_id="111", user_id="user")
     )
 
     async def stream_generator():
         # 启动该请求的处理任务
         producer_task = asyncio.create_task(
-            pipeline.process_request(request_id)
+            pipeline.process_request("111")
         )
 
         try:
@@ -49,13 +50,12 @@ async def concurrent_stream_response(request_id: str):
                         break
 
         except Exception as e:
-            logger.error(f"请求 {request_id} 流式响应出错: {e}")
             yield f"data: Error: {str(e)}\n\n"
         finally:
             # 清理任务和队列
             if not producer_task.done():
                 producer_task.cancel()
-            await pipeline.queue_manager.remove_queue(request_id)
+            await pipeline.queue_manager.remove_queue("111")
 
     return StreamingResponse(
         stream_generator(),
