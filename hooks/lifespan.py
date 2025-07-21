@@ -4,6 +4,14 @@ from fastapi import FastAPI
 
 from loguru import logger
 
+from modules.LLM.Dify.Dify_LLM_Module import Dify_LLM_Module
+from modules.pipeline.pipeline import PipeLine
+
+# 创建Pipeline
+pipeline = PipeLine.create_pipeline(
+    Dify_LLM_Module,
+)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

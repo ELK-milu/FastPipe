@@ -26,7 +26,7 @@ REDIS_PASSWORD = "difyai123456"
 # FastAPI
 from utils.gethost import get_host_ip
 FASTAPI_HOST = get_host_ip()
-FASTAPI_PORT = 3421
+FASTAPI_PORT = 3420
 
 # refresh token
 from datetime import timedelta

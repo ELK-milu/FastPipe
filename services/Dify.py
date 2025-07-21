@@ -1,7 +1,9 @@
-import aiohttp
-import httpx
-import requests
 import json
+import time
+
+import httpx
+from . import StreamGenerator
+from loguru import logger
 
 def SetSessionConfig(key:str,session: httpx.AsyncClient)->httpx.AsyncClient:
     session.headers.update({
@@ -21,3 +23,39 @@ def get_payload(text:str):
         "files": []
     }
     return payload
+
+def extract_response(response):
+    decoded_response = response.decode('utf-8')
+    message = ""
+    prefix = 'data: {"event": "message"'
+    if not decoded_response.strip().startswith(prefix):
+        return message
+    data = decoded_response[6:]
+    json_data = json.loads(data)
+    if json_data['event'] == 'message':
+        message = str(json_data['answer'])
+    return message
+
+class DifyStreamGenerator(StreamGenerator):
+    async def generate(self,process_func:callable = None):
+        """生成流数据"""
+        try:
+            async with self.client.stream(
+                    self.method,
+                    self.url,
+                    json=self.payload,
+                    timeout=300.0,
+                    headers=self.header
+            ) as response:
+                start_time = time.time()
+                # logger.info(f"{start_time}开始发送请求")
+                async for chunk in response.aiter_bytes():
+                    if chunk:
+                        if process_func:
+                            chunk = process_func(chunk)
+                        yield chunk
+        except Exception as e:
+            logger.error(f"Stream error: {str(e)}")
+            raise
+        finally:
+            final_time = time.time()
