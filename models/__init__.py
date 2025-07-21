@@ -33,6 +33,3 @@ AsyncSessionFactory = sessionmaker(
 )
 
 Base = declarative_base()
-
-from . import order
-from . import seckill
