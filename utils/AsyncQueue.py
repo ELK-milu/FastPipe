@@ -56,7 +56,7 @@ class AsyncQueueIterator:
 class AsyncMessageQueue:
     """异步消息队列"""
 
-    def __init__(self, name: str = "test_queue", timeout: float = 0.1):
+    def __init__(self, name: str = "test_queue", timeout: float = 10):
         self.name = name
         self.timeout = timeout
         self._queue = asyncio.Queue()
@@ -71,15 +71,12 @@ class AsyncMessageQueue:
         if self.name != message.request_id:
             raise RuntimeError("队列名称不匹配")
 
-        #print("队列接收到数据：" + AsyncQueueMessage.body)
-
         # 立即放入消息，无需等待
         self._queue.put_nowait(message)
         self._message_ready.set()  # 立即通知有新消息
         self._last_put_time = time.time()
 
     async def _get_message(self) -> Optional[AsyncQueueMessage]:
-        '''
         """内部方法：从队列获取消息"""
         if self._closed and self._queue.empty():
             return None
@@ -88,8 +85,7 @@ class AsyncMessageQueue:
             return message
         except Exception:
             return None
-        '''
-        return await self._get_message_optimized()
+        #return await self._get_message_optimized()
 
     async def _get_message_optimized(self) -> Optional[AsyncQueueMessage]:
         """优化的消息获取方法"""
@@ -252,7 +248,7 @@ class MessageConsumer:
     async def default_message_handler(self, message_body: str):
         """默认消息处理器"""
         print(f"默认处理器处理消息: {message_body}")
-        await asyncio.sleep(0.1)  # 模拟处理时间
+        await asyncio.sleep(10)  # 模拟处理时间
 
     async def consume(self):
         """消费消息"""

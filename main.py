@@ -68,30 +68,30 @@ async def concurrent_stream_response(request: PipeLineRequest):
         try:
             async for message_chunk in queue.iterator():
                 if message_chunk:
+                    chunk = message_chunk.body
                     # 检查结束标志
-                    if hasattr(message_chunk, 'is_end') and message_chunk.is_end:
+                    if message_chunk.body == "[DONE]":
                         break
-                    if isinstance(message_chunk, bytes):
+                    if isinstance(chunk, bytes):
                         # 二进制数据（如音频）编码为base64
-                        wav_audio = convert_audio_to_wav(message_chunk, set_sample_rate=24000)
+                        wav_audio = convert_audio_to_wav(chunk, set_sample_rate=24000)
                         response_data = {
                             "type": "audio/wav",
                             "chunk": base64.b64encode(wav_audio).decode("utf-8")
                         }
-                    elif isinstance(message_chunk, str):
-                        print("接收到文本数据:"+message_chunk)
+                    elif isinstance(chunk, str):
                         # 文本数据直接输出
                         response_data = {
                             "type": "text",
-                            "chunk": message_chunk
+                            "chunk": chunk
                         }
                     else:
                         # 其他类型数据转换为字符串
                         response_data = {
                             "type": "text",
-                            "chunk": str(message_chunk)
+                            "chunk": str(chunk)
                         }
-                    yield response_data
+                    yield f"data: {response_data}\n\n"
 
 
         except Exception as e:

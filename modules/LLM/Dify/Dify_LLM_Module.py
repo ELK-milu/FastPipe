@@ -26,7 +26,6 @@ class Dify_LLM_Module(BaseModule):
     def ProcessResponseFunc(self, intput_data:str):
         """PipeLineMessage的封装方法"""
         DifyText = extract_response(intput_data)
-        print("DifyText:" + DifyText)
         return DifyText
 
     def extract_think_response(self, response):

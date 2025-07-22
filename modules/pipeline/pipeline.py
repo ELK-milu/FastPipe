@@ -73,7 +73,7 @@ class PipeLine:
         # 此处不复用get_or_create_queue_context函数，因为put需要频繁调用，不需要每次都创建QueueRequestContext
         queue = await self.queue_manager.get_queue_by_request_id(Message.request_id)
         if queue:
-            #print("向队列" + Message.request_id + "添加信息:" + Message.body)
+            print("向队列" + Message.request_id + "添加信息:" + Message.body)
             await queue.put(Message)
         else:
             # 原则上来说不应该在这里创建队列，没有队列应当报错
