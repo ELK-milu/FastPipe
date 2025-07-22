@@ -71,6 +71,8 @@ class AsyncMessageQueue:
         if self.name != message.request_id:
             raise RuntimeError("队列名称不匹配")
 
+        #print("队列接收到数据：" + AsyncQueueMessage.body)
+
         # 立即放入消息，无需等待
         self._queue.put_nowait(message)
         self._message_ready.set()  # 立即通知有新消息
@@ -156,6 +158,7 @@ class QueueRequestContext:
     """请求上下文信息"""
     request_id: str
     user_id: str
+    request_dict:dict
     created_at: float = time.time()
     timeout: float = 30.0  # 默认30秒超时
     priority: int = 0  # 优先级，数字越大优先级越高

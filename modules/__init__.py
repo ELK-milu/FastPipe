@@ -25,16 +25,9 @@ class BaseModule(ABC):
     def __init__(self):
         self.pipeline :Optional["PipeLine"] = None
         self.nextModel : BaseModule = None
-        if os.path.exists(self.GetAbsPath() +  "/Config.yaml") :
-            self.Module_Config = read_config(self.GetAbsPath() + "/Config.yaml")
         self.ENDSIGN = None
         self.logger = logger
         pass
-
-    def GetAbsPath(self):
-        """获取调用者（子类）所在文件的绝对路径"""
-        return os.path.dirname(os.path.abspath(inspect.getfile(self.__class__)))
-
 
     # 模块调用的起始点
     async def ModuleEntry(self, request:ModuleMessage):
@@ -47,7 +40,9 @@ class BaseModule(ABC):
         try:
             input_data = await self.handle_request(message)
             print(f"input_data:{input_data}")
-            session = await self.GetGenerator(input_data)
+            session = await self.GetGenerator(message,input_data)
+            if not session:
+                return None
             async for chunk in session.generate(self.ProcessResponseFunc):
                 if chunk:
                     next_model_message,pipeline_message = await self.MessageWrapper(chunk,message)
@@ -70,7 +65,7 @@ class BaseModule(ABC):
         return request.body
 
     @abstractmethod
-    async def GetGenerator(self,input_data: Any)->StreamGenerator:
+    async def GetGenerator(self, message: ModuleMessage,input_data:Any)->Optional[StreamGenerator]:
         """从router创建的获取StreamGenerator的方法"""
         """
         generator = GetGenerator(input_data)

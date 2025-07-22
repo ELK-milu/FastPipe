@@ -2,7 +2,7 @@ import json
 import time
 
 import httpx
-from . import StreamGenerator
+from services import StreamGenerator
 from loguru import logger
 
 def SetSessionConfig(key:str,session: httpx.AsyncClient)->httpx.AsyncClient:
@@ -23,6 +23,7 @@ def get_payload(text:str):
         "files": []
     }
     return payload
+
 
 def extract_response(response):
     decoded_response = response.decode('utf-8')

@@ -1,14 +1,10 @@
 import httpx
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
-from loguru import logger
-from schemas.Dify.difyRequest import DeleteRequest, RenameRequest, InputRequest
+from schemas.difyRequest import DeleteRequest, RenameRequest, InputRequest
 from services import handle_http_exceptions, handle_streaming_http_exceptions
-from services.Dify import SetSessionConfig, get_payload, DifyStreamGenerator, extract_response
+from services.LLM.Dify.Dify import get_payload, DifyStreamGenerator
 from utils.httpManager import HTTPSessionManager
-from utils.auth import AuthHandler
-
-auth_handler = AuthHandler()
 
 router = APIRouter(prefix='')
 
@@ -22,12 +18,6 @@ HEADER = {
 }
 
 
-@router.get("/debug")
-async def debug(session: httpx.AsyncClient = Depends(httpSessionManager.get_client)):
-    response = await session.get('https://www.baidu.com/', timeout=30.0)
-    return response.text
-
-
 async def GetGenerator(input_data: str):
     session = await httpSessionManager.get_client()
     return DifyStreamGenerator(client=session,
@@ -36,7 +26,7 @@ async def GetGenerator(input_data: str):
                                method="POST",
                                url="http://192.168.30.46/v1/chat-messages")
 
-
+'''
 @router.post('/dify/stream')
 @handle_streaming_http_exceptions
 async def stream(input: InputRequest, client: httpx.AsyncClient = Depends(httpSessionManager.get_client)):
@@ -52,6 +42,7 @@ async def stream(input: InputRequest, client: httpx.AsyncClient = Depends(httpSe
         media_type="text/event-stream",
         headers={'Connection': 'keep-alive'}
     )
+'''
 
 
 @router.get("/messages")

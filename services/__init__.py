@@ -1,3 +1,4 @@
+import os
 import time
 from abc import abstractmethod
 from functools import wraps
@@ -58,3 +59,5 @@ class StreamGenerator:
     async def generate(self,process_func:callable = None):
         """生成流数据"""
         pass
+
+

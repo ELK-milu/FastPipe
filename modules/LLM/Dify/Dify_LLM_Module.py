@@ -1,12 +1,9 @@
-import json
-import time
-from typing import Any
+from typing import Optional
 
 from modules import BaseModule, ModuleMessage
 from routers.Dify import GetGenerator
 from services import StreamGenerator
-from services.Dify import extract_response
-from utils.AsyncQueue import AsyncQueueMessage
+from services.LLM.Dify.Dify import extract_response
 
 
 class Dify_LLM_Module(BaseModule):
@@ -17,14 +14,20 @@ class Dify_LLM_Module(BaseModule):
         """对模块输入请求进行内容提取的方法"""
         return request.body
 
-    async def GetGenerator(self,input_data: str)->StreamGenerator:
+
+    async def GetGenerator(self, message: ModuleMessage,input_data:str)->Optional[StreamGenerator]:
+        if input_data is None:
+            return None
         """从router创建的获取StreamGenerator的方法"""
         generator = await GetGenerator(input_data)
         return generator
 
+
     def ProcessResponseFunc(self, intput_data:str):
         """PipeLineMessage的封装方法"""
-        return extract_response(intput_data)
+        DifyText = extract_response(intput_data)
+        print("DifyText:" + DifyText)
+        return DifyText
 
     def extract_think_response(self, response):
         """

@@ -4,10 +4,11 @@ import uuid
 import base64
 import uvicorn
 from fastapi import FastAPI
-from starlette.responses import StreamingResponse
+from starlette.responses import StreamingResponse, JSONResponse
 
 from hooks.lifespan import lifespan
-from routers import seckill, Dify
+from modules.TTS.LiveTalking.LiveTalking_Module import LiveTalking_Module
+from routers import  Dify,LiveTalking
 from schemas.request import PipeLineRequest
 from services import handle_streaming_http_exceptions
 from settings import FASTAPI_HOST, FASTAPI_PORT
@@ -23,7 +24,7 @@ from loguru import logger
 
 # app.include_router(seckill.router)
 app.include_router(Dify.router)
-
+app.include_router(LiveTalking.router)
 # 创建Pipeline
 pipeline = PipeLine.create_pipeline(
     Dify_LLM_Module,
@@ -34,6 +35,19 @@ pipeline = PipeLine.create_pipeline(
 async def root():
     return {"message": "Hello World"}
 
+
+@app.get("/heartbeat")
+async def process_input(user: str):
+    """心跳请求"""
+    return {"message": "Success"}
+
+
+@app.get("/schema")
+async def get_schema():
+    """返回API请求模式"""
+    return PipeLineRequest.model_json_schema()
+
+
 @app.post("/input")
 async def concurrent_stream_response(request: PipeLineRequest):
     """支持多个并发请求的流式响应"""
@@ -41,7 +55,10 @@ async def concurrent_stream_response(request: PipeLineRequest):
     request_id = uuid.uuid4().hex
     # 为每个请求创建独立的队列
     queue = await pipeline.get_or_create_queue_by_context(
-        QueueRequestContext(request_id=request_id, user_id=request.user)
+        QueueRequestContext(request_id=request_id,
+                            user_id=request.user,
+                            request_dict=request.model_dump(),
+                            )
     )
     async def stream_generator():
         # 启动该请求的处理任务
@@ -59,9 +76,10 @@ async def concurrent_stream_response(request: PipeLineRequest):
                         wav_audio = convert_audio_to_wav(message_chunk, set_sample_rate=24000)
                         response_data = {
                             "type": "audio/wav",
-                            "chunk": message_chunk.b64encode(wav_audio).decode("utf-8")
+                            "chunk": base64.b64encode(wav_audio).decode("utf-8")
                         }
                     elif isinstance(message_chunk, str):
+                        print("接收到文本数据:"+message_chunk)
                         # 文本数据直接输出
                         response_data = {
                             "type": "text",

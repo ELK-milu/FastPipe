@@ -76,16 +76,23 @@ class PipeLine:
             #print("向队列" + Message.request_id + "添加信息:" + Message.body)
             await queue.put(Message)
         else:
+            # 原则上来说不应该在这里创建队列，没有队列应当报错
+            raise Exception("队列不存在")
+            '''
             print("创建队列：" + Message.request_id)
             create_queue_request = QueueRequestContext(
                 request_id=Message.request_id,
-                user_id=Message.user
+                user_id=Message.user,
+                context={}
             )
             queue = await self.queue_manager.create_queue_by_context(create_queue_request)
             await queue.put(Message)
+            '''
 
     async def get_queue(self, request_id: str) -> Optional[AsyncMessageQueue]:
         return await self.queue_manager.get_queue_by_request_id(request_id)
+    async def get_context(self, request_id: str) -> QueueRequestContext:
+        return self.queue_manager._contexts[request_id]
 
     async def get_or_create_queue_by_context(self, context: QueueRequestContext) -> Optional[AsyncMessageQueue]:
         queue =  await self.queue_manager.get_queue_by_request_id(context.request_id)
