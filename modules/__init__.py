@@ -19,6 +19,7 @@ class ModuleMessage():
     body:Any
     user:str
     request_id: str
+    start_time: float = time()
 
 class ModuleChunkProtocol():
     user: str
@@ -49,7 +50,6 @@ class BaseModule(ABC):
         # 在定义这个方法的时候需要指定input_data和函数输出的类型，用于pipeline检验当前模块所需的输入输出类型
         try:
             input_data = await self.handle_request(message)
-            print(f"input_data:{input_data}")
             session = await self.GetGenerator(message,input_data)
             if not session:
                 return None

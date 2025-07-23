@@ -43,6 +43,7 @@ class DifyStreamGenerator(StreamGenerator):
     async def generate(self,process_func:callable = None):
         """生成流数据"""
         try:
+            #yield "今天是星期三。"
             async with self.client.stream(
                     self.method,
                     self.url,
@@ -50,6 +51,7 @@ class DifyStreamGenerator(StreamGenerator):
                     timeout=300.0,
                     headers=self.header
             ) as response:
+                #yield "你好。"
                 start_time = time.time()
                 # logger.info(f"{start_time}开始发送请求")
                 async for chunk in response.aiter_bytes():

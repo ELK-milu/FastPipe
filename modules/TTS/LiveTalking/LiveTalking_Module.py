@@ -1,18 +1,19 @@
+import time
 from typing import Any, Optional
 
 from modules import BaseModule, ModuleMessage
+from modules.TTS import TTSModule
 from routers.LiveTalking import GetGenerator
 from services import StreamGenerator
 from services.TTS.LiveTalking.LiveTalking import extract_response, get_voice
 
 
-class LiveTalking_Module(BaseModule):
+class LiveTalking_Module(TTSModule):
     async def type_show(self, input_data: str)->str:
         """重写这个代码，不用任何内容，通过指定Any的输入输出来告诉pipeline该模块接受的输入输出类型"""
         pass
 
     async def handle_request(self, request:ModuleMessage):
-        print("LiveTalking收到消息:" + request.body)
         """对模块输入请求进行内容提取的方法"""
         return request.body
 
@@ -28,6 +29,8 @@ class LiveTalking_Module(BaseModule):
                                        sessionid=request_dict.get("TTS").get("sessionid",0),
                                        voice= voice,
                                        emotion= emotion,)
+        now_time = time.time()
+        #print("LiveTalking_Module消息发送完毕，耗时:" +  str(now_time - message.start_time) + "秒")
         return generator
 
     def ProcessResponseFunc(self, intput_data:str):

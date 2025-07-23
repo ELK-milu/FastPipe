@@ -75,7 +75,6 @@ class Dify_LLM_Module(LLMModule):
     def ChunkWrapper(self, message: ModuleMessage,chunk:str)->str:
         """chunk最终输出前的封装方法"""
         if self.request_chunks.get(message.request_id) is None:
-            print("添加modelChunk")
             self.request_chunks[message.request_id] = self.ModuleChunk(message.user, message.request_id)
 
         temp_chunk = self.request_chunks[message.request_id]
