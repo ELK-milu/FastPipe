@@ -65,7 +65,7 @@ async def concurrent_stream_response(request: PipeLineRequest):
         # 启动该请求的处理任务
         producer_task = asyncio.create_task(
             pipeline.process_request(
-                text=request.Input,
+                text=request.text,
                 user=request.user,
                 request_id=request_id,
                 type="str",

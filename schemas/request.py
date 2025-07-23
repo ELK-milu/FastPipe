@@ -10,6 +10,7 @@ class PipeLineRequest(RequestModel):
     # Required fields
     user: str
     Input: str
+    text:str
     Entry: int
 
     # Optional fields with default values

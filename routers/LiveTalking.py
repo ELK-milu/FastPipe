@@ -16,15 +16,19 @@ HEADER = {
 }
 
 async def GetGenerator(text: str,sessionid:int,voice:str,emotion:str):
-    session = await httpSessionManager.get_client()
-    return LiveTalkingStreamGenerator(client=session,
-                                      payload=get_payload(text=text,
-                                                          sessionid=sessionid,
-                                                          voice=voice,
-                                                          emotion=emotion),
-                                      header=HEADER,
-                                      method="POST",
-                                      url=f"{BASE_URL}/human")
+    try:
+        session = await httpSessionManager.get_client()
+        return LiveTalkingStreamGenerator(client=session,
+                                          payload=get_payload(text=text,
+                                                              sessionid=sessionid,
+                                                              voice=voice,
+
+                                                              emotion=emotion),
+                                          header=HEADER,
+                                          method="POST",
+                                          url=f"{BASE_URL}/human")
+    except Exception as e:
+        raise e
 
 
 @router.post("/awake")

@@ -19,12 +19,16 @@ HEADER = {
 
 
 async def GetGenerator(input_data: str):
-    session = await httpSessionManager.get_client()
-    return DifyStreamGenerator(client=session,
-                               payload=get_payload(input_data),
-                               header=HEADER,
-                               method="POST",
-                               url="http://192.168.30.46/v1/chat-messages")
+    try:
+        session = await httpSessionManager.get_client()
+        return DifyStreamGenerator(client=session,
+                                   payload=get_payload(input_data),
+                                   header=HEADER,
+                                   method="POST",
+                                   url="http://192.168.30.46/v1/chat-messages")
+    except Exception as e:
+        raise e
+
 
 '''
 @router.post('/dify/stream')

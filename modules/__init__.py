@@ -66,7 +66,13 @@ class BaseModule(ABC):
                     if self.nextModel:
                         await self.nextModel.ModuleEntry(next_model_message)
         except Exception as e:
-            raise e
+            error_message = AsyncQueueMessage(
+                type="error",
+                body=f"处理出错: {str(e)}",
+                user=message.user,
+                request_id=message.request_id
+            )
+            await self.PutToPipe(error_message)
 
     @abstractmethod
     async def type_show(self, input_data: Any)->Any:
