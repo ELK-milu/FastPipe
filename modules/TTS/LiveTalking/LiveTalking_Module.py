@@ -3,8 +3,7 @@ from typing import Any, Optional
 from modules import BaseModule, ModuleMessage
 from routers.LiveTalking import GetGenerator
 from services import StreamGenerator
-from services.TTS.LiveTalking.LiveTalking import extract_response
-
+from services.TTS.LiveTalking.LiveTalking import extract_response, get_voice
 
 
 class LiveTalking_Module(BaseModule):
@@ -24,15 +23,14 @@ class LiveTalking_Module(BaseModule):
         """从router创建的获取StreamGenerator的方法"""
         queueRequestContext = await self.pipeline.get_context(request_id=message.request_id)
         request_dict = queueRequestContext.request_dict
+        voice,emotion = get_voice(request_dict)
         generator = await GetGenerator(text=input_data,
-                                       sessionid=request_dict.get("sessionid", 0),
-                                       voice= request_dict.get("voice", "邻家女孩"),
-                                       emotion= request_dict.get("emotion", "中立"),)
+                                       sessionid=request_dict.get("TTS").get("sessionid",0),
+                                       voice= voice,
+                                       emotion= emotion,)
         return generator
 
     def ProcessResponseFunc(self, intput_data:str):
         """PipeLineMessage的封装方法"""
-        #return extract_response(intput_data)
-        print("LiveTalking ProcessResponseFunc:" + intput_data)
-        return intput_data
+        return extract_response(intput_data)
 

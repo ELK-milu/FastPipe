@@ -1,7 +1,7 @@
 import inspect
 import os
 from abc import ABC, abstractmethod
-from typing import Any, TYPE_CHECKING, Optional, Callable
+from typing import Any, TYPE_CHECKING, Optional, Callable, Dict
 from time import time
 from attr import dataclass
 
@@ -20,6 +20,10 @@ class ModuleMessage():
     user:str
     request_id: str
 
+class ModuleChunkProtocol():
+    user: str
+    request_id: str
+
 
 class BaseModule(ABC):
     def __init__(self):
@@ -27,7 +31,13 @@ class BaseModule(ABC):
         self.nextModel : BaseModule = None
         self.ENDSIGN = None
         self.logger = logger
-        pass
+        # 根据请求存储的ModuleChunk，并非必需使用，若自定义模块时有需要借助其他类作为数据存储用，则需要在此定义
+        self.request_chunks : Dict[str,ModuleChunkProtocol] ={}
+
+    class ModuleChunk(ModuleChunkProtocol):
+        def __init__(self, user:str, request_id: str):
+            self.user = user
+            self.request_id = request_id
 
     # 模块调用的起始点
     async def ModuleEntry(self, request:ModuleMessage):
@@ -45,7 +55,11 @@ class BaseModule(ABC):
                 return None
             async for chunk in session.generate(self.ProcessResponseFunc):
                 if chunk:
-                    next_model_message,pipeline_message = await self.MessageWrapper(chunk,message)
+                    final_chunk = self.ChunkWrapper(message,chunk)
+                else:
+                    final_chunk = None
+                if final_chunk:
+                    next_model_message,pipeline_message = await self.MessageWrapper(final_chunk, message)
 
                     if self.pipeline:
                         await self.PutToPipe(pipeline_message)
@@ -74,9 +88,14 @@ class BaseModule(ABC):
         pass
 
     @abstractmethod
-    def ProcessResponseFunc(self, intput_data:Any):
+    def ProcessResponseFunc(self, intput_data:Any)->Any:
         """处理响应chunk的方法"""
         return None
+
+
+    def ChunkWrapper(self, message: ModuleMessage,chunk:Any):
+        """chunk最终输出前的封装方法"""
+        return chunk
 
     async def PipeLineMessageWrapper(self, input_data:Any,message:ModuleMessage)->AsyncQueueMessage:
         """PipeLineMessage的封装方法"""

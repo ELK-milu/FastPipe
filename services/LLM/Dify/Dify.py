@@ -37,6 +37,8 @@ def extract_response(response):
         message = str(json_data['answer'])
     return message
 
+
+
 class DifyStreamGenerator(StreamGenerator):
     async def generate(self,process_func:callable = None):
         """生成流数据"""

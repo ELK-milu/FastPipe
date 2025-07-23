@@ -16,6 +16,12 @@ def GetAbsPath_File():
 
 Module_Config = read_config(GetAbsPath_File() + "/Config.yaml")
 
+def get_voice(dict):
+    reffile = Module_Config[dict["TTS"]["voice"]][dict["TTS"]["emotion"]]["reffile"]
+    reftext = Module_Config[dict["TTS"]["voice"]][dict["TTS"]["emotion"]]["reftext"]
+    return reffile,reftext
+
+
 
 async def generate_stream(user, voice) -> AsyncGenerator[str, None]:
     awakeText = Module_Config[voice]["awake_text"]

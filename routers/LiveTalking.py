@@ -7,7 +7,7 @@ from utils.httpManager import HTTPSessionManager
 
 router = APIRouter(prefix='')
 
-BASE_URL = "http://117.50.184.42:8010"
+BASE_URL = "http://192.168.30.46:8010"
 httpSessionManager = HTTPSessionManager(base_url=f"{BASE_URL}")
 HEADER = {
     'Authorization': "",

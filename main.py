@@ -28,6 +28,7 @@ app.include_router(LiveTalking.router)
 # 创建Pipeline
 pipeline = PipeLine.create_pipeline(
     Dify_LLM_Module,
+    LiveTalking_Module
 )
 
 
@@ -63,32 +64,42 @@ async def concurrent_stream_response(request: PipeLineRequest):
     async def stream_generator():
         # 启动该请求的处理任务
         producer_task = asyncio.create_task(
-            pipeline.process_request(request_id)
+            pipeline.process_request(
+                text=request.Input,
+                user=request.user,
+                request_id=request_id,
+                type="str",
+                entry=request.Entry
+            )
         )
         try:
             async for message_chunk in queue.iterator():
                 if message_chunk:
                     chunk = message_chunk.body
                     # 检查结束标志
-                    if message_chunk.body == "[DONE]":
+                    if message_chunk.type == "end":
                         break
-                    if isinstance(chunk, bytes):
+                    if message_chunk.type == "audio":
                         # 二进制数据（如音频）编码为base64
                         wav_audio = convert_audio_to_wav(chunk, set_sample_rate=24000)
                         response_data = {
                             "type": "audio/wav",
                             "chunk": base64.b64encode(wav_audio).decode("utf-8")
                         }
-                    elif isinstance(chunk, str):
+                    elif message_chunk.type == "str":
                         # 文本数据直接输出
                         response_data = {
                             "type": "text",
                             "chunk": chunk
                         }
-                    else:
-                        # 其他类型数据转换为字符串
+                    elif message_chunk.type == "info":
                         response_data = {
-                            "type": "text",
+                            "type": "info",
+                            "chunk": chunk
+                        }
+                    elif message_chunk.type == "error":
+                        response_data = {
+                            "type": "error",
                             "chunk": str(chunk)
                         }
                     yield f"data: {response_data}\n\n"

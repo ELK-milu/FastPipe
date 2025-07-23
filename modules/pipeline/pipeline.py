@@ -21,8 +21,11 @@ class PipeLine:
 
     def StartUp(self):
         print(self.Validate())
+        module_index = 0
         for module in self.modules:
             module.pipeline = self
+            module.nextModel = self.modules[module_index + 1] if module_index < len(self.modules) - 1 else None
+            module_index+=1
         pass
 
     def Validate(self) -> str:
@@ -114,32 +117,31 @@ class PipeLine:
         """创建新的Pipeline实例"""
         return cls(list(modules))
 
-    async def process_request(self,request_id: str,entry:int = 0):
+    async def process_request(self,text:str,user:str,request_id: str,type:str="str",entry:int = 0):
         """处理特定请求"""
         try:
             test_message = ModuleMessage(
-                type="str",
-                body="你好啊，介绍下你自己",
-                user="user",
+                type=type,
+                body=text,
+                user=user,
                 request_id=request_id
             )
             await self.modules[entry].ModuleEntry(test_message)
-
-            # 发送结束信号
-            end_message = AsyncQueueMessage(
-                type="end",
-                body="[DONE]",
-                user="user",
-                request_id=request_id
-            )
-            end_message.is_end = True
-            await self.put_message(end_message)
-
         except Exception as e:
             error_message = AsyncQueueMessage(
                 type="error",
                 body=f"处理出错: {str(e)}",
-                user="user",
+                user=user,
                 request_id=request_id
             )
             await self.put_message(error_message)
+        finally:
+            # 发送结束信号
+            end_message = AsyncQueueMessage(
+                type="end",
+                body="[DONE]",
+                user=user,
+                request_id=request_id
+            )
+            end_message.is_end = True
+            await self.put_message(end_message)
