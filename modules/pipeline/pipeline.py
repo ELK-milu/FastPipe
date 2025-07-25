@@ -17,17 +17,30 @@ class PipeLine:
 
         self.validated: bool = False
         self.consumer_task = None
-        self.queue_manager = AsyncMessageQueueManager()
+        self.queue_manager = AsyncMessageQueueManager(cleanup_interval=5,
+                                                      max_queue_disactive_age=5)
 
     async def StartUp(self):
         print(self.Validate())
         await self.queue_manager.start()
+        self.queue_manager.remove_queue_callback = self.queue_end
+
         module_index = 0
         for module in self.modules:
             module.pipeline = self
             module.nextModel = self.modules[module_index + 1] if module_index < len(self.modules) - 1 else None
             module_index+=1
         pass
+
+    async def queue_end(self,request_id:str):
+        # 发送结束信号
+        end_message = AsyncQueueMessage(
+            type="end",
+            body="[DONE]",
+            user="",
+            request_id=request_id
+        )
+        await self.put_message(end_message)
 
     async def clear(self,request_id:str):
         # 清理队列由manager自行管理
@@ -128,12 +141,4 @@ class PipeLine:
         except Exception as e:
             raise e
         finally:
-            # 发送结束信号
-            end_message = AsyncQueueMessage(
-                type="end",
-                body="[DONE]",
-                user=user,
-                request_id=request_id
-            )
-            await self.put_message(end_message)
             await self.clear(request_id)

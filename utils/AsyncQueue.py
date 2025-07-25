@@ -170,6 +170,7 @@ class AsyncMessageQueueManager():
         self._contexts: Dict[str, QueueRequestContext] = {}
         self._cleanup_interval = cleanup_interval
         self._max_queue_disactive_age = max_queue_disactive_age
+        self.remove_queue_callback : callable = None
         self._cleanup_task = None
         self._lock = asyncio.Lock()
 
@@ -226,6 +227,8 @@ class AsyncMessageQueueManager():
                         expired_requests.append(request_id)
 
                 for request_id in expired_requests:
+                    if self.remove_queue_callback:
+                        await self.remove_queue_callback(request_id)
                     await self.remove_queue(request_id)
                     print(f"清理过期队列: {request_id}")
 

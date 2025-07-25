@@ -40,7 +40,6 @@ async def StartUp():
     await pipeline.StartUp()
     first_time = True
 
-
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
