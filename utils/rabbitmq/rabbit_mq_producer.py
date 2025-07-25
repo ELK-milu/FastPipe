@@ -53,7 +53,7 @@ class RabbitMQProducer(metaclass=SingletonMeta):
         )
         print(f"消息已发布到 {routing_key}: {message}")
 
-    async def boardcast(self,exchanger:str, message: str,durable:bool = False, loop=None):
+    async def boardcast(self,exchanger:str, message: str,type:aio_pika.ExchangeType,durable:bool = False,routing_key:str="", loop=None):
         """发布消息到所有绑定的队列"""
         if not self.is_running:
             await self.connect(loop)
@@ -64,7 +64,7 @@ class RabbitMQProducer(metaclass=SingletonMeta):
         # 声明 fanout 类型的交换机
         exchange = await self.channel.declare_exchange(
             exchanger,
-            aio_pika.ExchangeType.FANOUT,
+            type,
             durable=durable
         )
         board_message = aio_pika.Message(
@@ -72,7 +72,8 @@ class RabbitMQProducer(metaclass=SingletonMeta):
             delivery_mode=aio_pika.DeliveryMode.PERSISTENT
         )
         # 发布消息到交换机（不指定路由键）
-        await exchange.publish(board_message, routing_key="")
+        await exchange.publish(board_message, routing_key=routing_key)
+
 
 
 rabbit_mq_producer = RabbitMQProducer()

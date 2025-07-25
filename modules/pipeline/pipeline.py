@@ -29,6 +29,11 @@ class PipeLine:
             module_index+=1
         pass
 
+    async def clear(self,request_id:str):
+        await self.queue_manager.remove_queue(request_id)
+        for module in self.modules:
+            await module.clear(request_id)
+
     def Validate(self) -> str:
         """验证Pipeline配置"""
         status = []
@@ -82,16 +87,6 @@ class PipeLine:
         else:
             # 原则上来说不应该在这里创建队列，没有队列应当报错
             raise Exception("队列不存在")
-            '''
-            print("创建队列：" + Message.request_id)
-            create_queue_request = QueueRequestContext(
-                request_id=Message.request_id,
-                user_id=Message.user,
-                context={}
-            )
-            queue = await self.queue_manager.create_queue_by_context(create_queue_request)
-            await queue.put(Message)
-            '''
 
     async def get_queue(self, request_id: str) -> Optional[AsyncMessageQueue]:
         return await self.queue_manager.get_queue_by_request_id(request_id)
@@ -130,13 +125,7 @@ class PipeLine:
             )
             await self.modules[entry].ModuleEntry(test_message)
         except Exception as e:
-            error_message = AsyncQueueMessage(
-                type="error",
-                body=f"处理出错: {str(e)}",
-                user=user,
-                request_id=request_id
-            )
-            await self.put_message(error_message)
+            raise e
         finally:
             # 发送结束信号
             end_message = AsyncQueueMessage(
@@ -147,3 +136,4 @@ class PipeLine:
             )
             end_message.is_end = True
             await self.put_message(end_message)
+            await self.clear(request_id)

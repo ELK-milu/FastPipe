@@ -28,7 +28,7 @@ class LLMModule(BaseModule):
         pass
 
     @abstractmethod
-    def ProcessResponseFunc(self, intput_data:Any)->Any:
+    def ProcessResponseFunc(self, chunk:Any)->Any:
         """处理响应chunk的方法"""
         return None
 

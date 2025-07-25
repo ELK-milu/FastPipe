@@ -1,4 +1,5 @@
 import asyncio
+import json
 import time
 import uuid
 import base64
@@ -7,8 +8,9 @@ from fastapi import FastAPI
 from starlette.responses import StreamingResponse, JSONResponse
 
 from hooks.lifespan import lifespan
+from modules.TTS.GPTSovits.GPTSovits_Module import GPTSovits_Module
 from modules.TTS.LiveTalking.LiveTalking_Module import LiveTalking_Module
-from routers import  Dify,LiveTalking
+from routers import Dify, LiveTalking, GPTSovits
 from schemas.request import PipeLineRequest
 from services import handle_streaming_http_exceptions
 from settings import FASTAPI_HOST, FASTAPI_PORT
@@ -24,11 +26,12 @@ from loguru import logger
 
 # app.include_router(seckill.router)
 app.include_router(Dify.router)
-app.include_router(LiveTalking.router)
+#app.include_router(LiveTalking.router)
+app.include_router(GPTSovits.router)
 # 创建Pipeline
 pipeline = PipeLine.create_pipeline(
     Dify_LLM_Module,
-    LiveTalking_Module
+    GPTSovits_Module
 )
 
 
@@ -78,14 +81,19 @@ async def concurrent_stream_response(request: PipeLineRequest):
                     chunk = message_chunk.body
                     # 检查结束标志
                     if message_chunk.type == "end":
-                        break
-                    if message_chunk.type == "audio":
-                        # 二进制数据（如音频）编码为base64
-                        wav_audio = convert_audio_to_wav(chunk, set_sample_rate=24000)
                         response_data = {
-                            "type": "audio/wav",
-                            "chunk": base64.b64encode(wav_audio).decode("utf-8")
+                            "type": "end",
+                            "chunk": "[DONE]"
                         }
+                    elif message_chunk.type == "audio":
+                        # 二进制数据（如音频）编码为base64
+                        if isinstance(chunk, bytes):
+                            wav_audio = convert_audio_to_wav(chunk, set_sample_rate=24000)
+
+                            response_data = {
+                                "type": "audio/wav",
+                                "chunk": base64.b64encode(wav_audio).decode("utf-8")
+                            }
                     elif message_chunk.type == "str":
                         # 文本数据直接输出
                         response_data = {
@@ -98,15 +106,24 @@ async def concurrent_stream_response(request: PipeLineRequest):
                             "chunk": chunk
                         }
                     elif message_chunk.type == "error":
+                        logger.error(str(chunk))
                         response_data = {
                             "type": "error",
                             "chunk": str(chunk)
                         }
+                    response_data = json.dumps(response_data, ensure_ascii=False)
                     yield f"data: {response_data}\n\n"
-
-
+                    if message_chunk.type == "end":
+                        break
         except Exception as e:
-            yield f"data: Error: {str(e)}\n\n"
+            raise e
+            logger.error(str(e))
+            response_data = {
+                "type": "error",
+                "chunk": str(e)
+            }
+            response_data = json.dumps(response_data, ensure_ascii=False)
+            yield f"data: {response_data}\n\n"
         finally:
             # 清理任务和队列
             if not producer_task.done():

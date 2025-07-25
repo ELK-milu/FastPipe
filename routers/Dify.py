@@ -3,14 +3,18 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from schemas.difyRequest import DeleteRequest, RenameRequest, InputRequest
 from services import handle_http_exceptions, handle_streaming_http_exceptions
-from services.LLM.Dify.Dify import get_payload, DifyStreamGenerator
+from services.LLM.Dify.Service import get_payload, DifyStreamGenerator
 from utils.httpManager import HTTPSessionManager
 
 router = APIRouter(prefix='')
 
 BASE_URL = "http://192.168.30.46/v1"
 httpSessionManager = HTTPSessionManager(base_url="http://192.168.30.46/v1/chat-messages")
-KEY = "app-FHpDSmylxvZ8rHcdMWo4XgkE"
+#KEY = "app-FHpDSmylxvZ8rHcdMWo4XgkE"
+
+# 佼佼仔
+KEY = "app-uZdChxVBRe32nk5LvoMiqYSk"
+
 HEADER = {
     'Authorization': f'Bearer {KEY}',
     'Content-Type': 'application/json',

@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from starlette.responses import StreamingResponse
 
 from schemas.request import AwakeModel
-from services.TTS.LiveTalking.LiveTalking import LiveTalkingStreamGenerator, get_payload, generate_stream
+from services.TTS.LiveTalking.Service import LiveTalkingStreamGenerator, get_payload, generate_stream
 from utils.httpManager import HTTPSessionManager
 
 router = APIRouter(prefix='')

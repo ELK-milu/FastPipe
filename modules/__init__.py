@@ -1,3 +1,4 @@
+import asyncio
 import inspect
 import os
 from abc import ABC, abstractmethod
@@ -42,6 +43,7 @@ class BaseModule(ABC):
 
     # 模块调用的起始点
     async def ModuleEntry(self, request:ModuleMessage):
+        #await asyncio.create_task(self.main_loop(request))
         await self.main_loop(request)
 
 
@@ -60,19 +62,19 @@ class BaseModule(ABC):
                     final_chunk = None
                 if final_chunk:
                     next_model_message,pipeline_message = await self.MessageWrapper(final_chunk, message)
-
                     if self.pipeline:
                         await self.PutToPipe(pipeline_message)
                     if self.nextModel:
+                        #TODO:
+                        # 用协程并发启动下一个模块
+                        # 此处不用协程可以等待文本和音频一起返回，
+                        # 设计上来说应当使用协程的，但是目前协程尚有bug。若使用await等待，则pipeline在await ModuleEntry后会阻塞等待直到所有modules的main_loop执行完毕再返回end信号
+                        # 但是此处若将ModuleEntry用协程并发，会导致所有模块的await mainloop执行完毕（以PutToPipe为终点），但是实现并发的协程还未执行完毕
+                        # pipeline在得到await ModuleEntry[0]的返回结果后，认为已经执行完毕了，在finally返回end信号导致队列被提前删除，导致并发执行的main_loop无法PutToPipe报错
+                        #task2 = asyncio.create_task(
                         await self.nextModel.ModuleEntry(next_model_message)
         except Exception as e:
-            error_message = AsyncQueueMessage(
-                type="error",
-                body=f"处理出错: {str(e)}",
-                user=message.user,
-                request_id=message.request_id
-            )
-            await self.PutToPipe(error_message)
+            raise e
 
     @abstractmethod
     async def type_show(self, input_data: Any)->Any:
@@ -94,7 +96,7 @@ class BaseModule(ABC):
         pass
 
     @abstractmethod
-    def ProcessResponseFunc(self, intput_data:Any)->Any:
+    def ProcessResponseFunc(self, chunk:Any)->Any:
         """处理响应chunk的方法"""
         return None
 
@@ -127,3 +129,7 @@ class BaseModule(ABC):
     async def PutToPipe(self, input_data:AsyncQueueMessage):
         """将数据写入PipeLine的队列中"""
         await self.pipeline.put_message(input_data)
+
+    async def clear(self,request_id:str):
+        if request_id in self.request_chunks:
+            del self.request_chunks[request_id]

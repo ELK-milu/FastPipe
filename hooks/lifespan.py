@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from loguru import logger
+#from utils.rabbitmq.rabbit_mq_producer import rabbit_mq_producer
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
