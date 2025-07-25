@@ -18,6 +18,10 @@ HEADER = {
     "Content-Type": "application/json",
     'Connection': 'Keep-Alive',
 }
+
+async def StartUp():
+    await httpSessionManager.get_client()
+
 async def GetStreamGenerator(input_data: str):
     try:
         session = await httpSessionManager.get_client()

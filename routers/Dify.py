@@ -21,6 +21,9 @@ HEADER = {
     'Connection': 'Keep-Alive'
 }
 
+async def StartUp():
+    await httpSessionManager.get_client()
+
 
 async def GetGenerator(input_data: str):
     try:

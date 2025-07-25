@@ -42,10 +42,10 @@ def extract_response(response):
 def extract_complete_response(response):
     decoded_response = response.decode('utf-8')
     prefix = 'data: {"event": "message'
-
     if not decoded_response.strip().startswith(prefix):
         return ""
     data = decoded_response[6:]
+    #print(data)
     json_data = json.loads(data)
     if json_data['event'] == 'message' or json_data['event'] == 'message_end':
         return json_data

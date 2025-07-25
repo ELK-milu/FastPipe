@@ -18,10 +18,10 @@ class PipeLine:
         self.validated: bool = False
         self.consumer_task = None
         self.queue_manager = AsyncMessageQueueManager()
-        self.StartUp()
 
-    def StartUp(self):
+    async def StartUp(self):
         print(self.Validate())
+        await self.queue_manager.start()
         module_index = 0
         for module in self.modules:
             module.pipeline = self
@@ -30,7 +30,8 @@ class PipeLine:
         pass
 
     async def clear(self,request_id:str):
-        await self.queue_manager.remove_queue(request_id)
+        # 清理队列由manager自行管理
+        #await self.queue_manager.remove_queue(request_id)
         for module in self.modules:
             await module.clear(request_id)
 
@@ -134,6 +135,5 @@ class PipeLine:
                 user=user,
                 request_id=request_id
             )
-            end_message.is_end = True
             await self.put_message(end_message)
             await self.clear(request_id)

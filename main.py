@@ -17,7 +17,7 @@ from settings import FASTAPI_HOST, FASTAPI_PORT
 from modules.LLM.Dify.Dify_LLM_Module import Dify_LLM_Module
 from modules.pipeline.pipeline import PipeLine
 from utils.AsyncQueue import QueueRequestContext
-from utils.AudioChange import convert_audio_to_wav
+from utils.AudioChange import convert_audio_to_wav, convert_wav_to_pcm_simple
 
 app = FastAPI(lifespan=lifespan)
 from loguru import logger
@@ -26,13 +26,19 @@ from loguru import logger
 
 # app.include_router(seckill.router)
 app.include_router(Dify.router)
-#app.include_router(LiveTalking.router)
 app.include_router(GPTSovits.router)
+first_time = False
 # 创建Pipeline
 pipeline = PipeLine.create_pipeline(
     Dify_LLM_Module,
     GPTSovits_Module
 )
+
+async def StartUp():
+    await Dify.StartUp()
+    await GPTSovits.StartUp()
+    await pipeline.StartUp()
+    first_time = True
 
 
 @app.get("/")
@@ -42,6 +48,8 @@ async def root():
 
 @app.get("/heartbeat")
 async def process_input(user: str):
+    if not first_time:
+        await StartUp()
     """心跳请求"""
     return {"message": "Success"}
 
@@ -88,8 +96,7 @@ async def concurrent_stream_response(request: PipeLineRequest):
                     elif message_chunk.type == "audio":
                         # 二进制数据（如音频）编码为base64
                         if isinstance(chunk, bytes):
-                            wav_audio = convert_audio_to_wav(chunk, set_sample_rate=24000)
-
+                            wav_audio = convert_wav_to_pcm_simple(chunk, set_sample_rate=24000)
                             response_data = {
                                 "type": "audio/wav",
                                 "chunk": base64.b64encode(wav_audio).decode("utf-8")
@@ -116,7 +123,7 @@ async def concurrent_stream_response(request: PipeLineRequest):
                     if message_chunk.type == "end":
                         break
         except Exception as e:
-            raise e
+            #raise e
             logger.error(str(e))
             response_data = {
                 "type": "error",
@@ -124,11 +131,11 @@ async def concurrent_stream_response(request: PipeLineRequest):
             }
             response_data = json.dumps(response_data, ensure_ascii=False)
             yield f"data: {response_data}\n\n"
+            raise e
         finally:
             # 清理任务和队列
             if not producer_task.done():
                 producer_task.cancel()
-            await pipeline.queue_manager.remove_queue(request_id)
 
     return StreamingResponse(
         stream_generator(),

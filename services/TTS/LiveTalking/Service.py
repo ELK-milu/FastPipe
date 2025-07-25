@@ -6,7 +6,7 @@ from typing import AsyncGenerator
 import aiofiles
 import httpx
 from services import StreamGenerator
-from utils.AudioChange import convert_audio_to_wav
+from utils.AudioChange import convert_audio_to_wav, convert_wav_to_pcm_simple
 from utils.ConfigLoader import read_config
 
 
@@ -48,7 +48,7 @@ async def generate_stream(user, voice) -> AsyncGenerator[str, None]:
         # 使用 aiofiles 进行异步文件读取
         async with aiofiles.open(awakeAudioPath, 'rb') as f:
             audio_data = await f.read()
-            wav_audio = convert_audio_to_wav(audio_data, set_sample_rate=24000)
+            wav_audio = convert_wav_to_pcm_simple(audio_data, set_sample_rate=24000)
             yield json.dumps({
                 "type": "audio/wav",
                 "chunk": base64.b64encode(wav_audio).decode("utf-8")

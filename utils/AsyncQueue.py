@@ -61,6 +61,7 @@ class AsyncMessageQueue:
         self.timeout = timeout
         self._queue = asyncio.Queue()
         self._closed = False
+        self._last_put_time = time.time()
         self._iterators = set()
         self._message_ready= asyncio.Event()
 
@@ -93,7 +94,7 @@ class AsyncMessageQueue:
             return None
 
         try:
-            # 优化5: 先尝试立即获取，避免不必要的等待
+            # 先尝试立即获取，避免不必要的等待
             if not self._queue.empty():
                 message = self._queue.get_nowait()
                 return message
@@ -161,14 +162,14 @@ class QueueRequestContext:
 
 class AsyncMessageQueueManager():
 
-    def __init__(self, cleanup_interval: float = 60.0, max_queue_age: float = 500.0):
+    def __init__(self, cleanup_interval: float = 60.0, max_queue_disactive_age: float = 60.0):
         # 根据request存储请求体和响应队列
         self._queues: Dict[str, AsyncMessageQueue] = {}
         # 根据request_id查询根据QueueRequestContext
         # 根据QueueRequestContext.request_id查询异步队列
         self._contexts: Dict[str, QueueRequestContext] = {}
         self._cleanup_interval = cleanup_interval
-        self._max_queue_age = max_queue_age
+        self._max_queue_disactive_age = max_queue_disactive_age
         self._cleanup_task = None
         self._lock = asyncio.Lock()
 
@@ -218,7 +219,10 @@ class AsyncMessageQueueManager():
                 expired_requests = []
 
                 for request_id, context in self._contexts.items():
-                    if current_time - context.created_at > self._max_queue_age:
+                    queue = self._queues.get(request_id, None)
+                    if not queue:
+                        continue
+                    if current_time - queue._last_put_time > self._max_queue_disactive_age:
                         expired_requests.append(request_id)
 
                 for request_id in expired_requests:
