@@ -27,7 +27,7 @@ def get_payload(text:str,ref_audio_path:str="./GPT_SoVITS/models/佼佼仔_中�
         "top_k": 5,
         "top_p": 1,
         "temperature": 1,
-        "text_split_method": "cut6",
+        "text_split_method": "cut5",
         "return_fragment": False,  # 确保分段返回片段
         "batch_size": 8,  # 增加batch_size以加速处理
         "batch_threshold": 0.75,

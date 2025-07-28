@@ -22,7 +22,7 @@ class PipeLine:
 
     async def StartUp(self):
         print(self.Validate())
-        await self.queue_manager.start()
+        #await self.queue_manager.start()
         self.queue_manager.remove_queue_callback = self.queue_end
 
         module_index = 0
@@ -41,6 +41,7 @@ class PipeLine:
             request_id=request_id
         )
         await self.put_message(end_message)
+        await self.queue_manager.remove_queue(request_id)
 
     async def clear(self,request_id:str):
         # 清理队列由manager自行管理
@@ -142,3 +143,5 @@ class PipeLine:
             raise e
         finally:
             await self.clear(request_id)
+            # 异步await所有模块执行完毕而非协程执行时启用
+            await self.queue_end(request_id)

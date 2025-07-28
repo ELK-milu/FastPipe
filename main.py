@@ -23,11 +23,9 @@ app = FastAPI(lifespan=lifespan)
 from loguru import logger
 
 # app.add_middleware(BaseHTTPMiddleware,dispatch=db_session_middleware)
-
 # app.include_router(seckill.router)
 app.include_router(Dify.router)
 app.include_router(GPTSovits.router)
-first_time = False
 # 创建Pipeline
 pipeline = PipeLine.create_pipeline(
     Dify_LLM_Module,
@@ -38,17 +36,19 @@ async def StartUp():
     await Dify.StartUp()
     await GPTSovits.StartUp()
     await pipeline.StartUp()
-    first_time = True
 
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
 
 
+@app.get("/startup")
+async def root():
+    await StartUp()
+    return {"message": "Hello World"}
+
 @app.get("/heartbeat")
 async def process_input(user: str):
-    if not first_time:
-        await StartUp()
     """心跳请求"""
     return {"message": "Success"}
 
@@ -72,6 +72,9 @@ async def concurrent_stream_response(request: PipeLineRequest):
                             )
     )
     async def stream_generator():
+        start_time = time.time()
+        first_str = False
+        first_audio = False
         # 启动该请求的处理任务
         producer_task = asyncio.create_task(
             pipeline.process_request(
@@ -100,7 +103,14 @@ async def concurrent_stream_response(request: PipeLineRequest):
                                 "type": "audio/wav",
                                 "chunk": base64.b64encode(wav_audio).decode("utf-8")
                             }
+                        if not first_audio:
+                            first_audio = True
+                            logger.info("生成first_audio的耗时:" + str(time.time() - start_time))
                     elif message_chunk.type == "str":
+
+                        if not first_str:
+                            first_str = True
+                            logger.info("生成first_str的耗时:" + str(time.time() - start_time))
                         # 文本数据直接输出
                         response_data = {
                             "type": "text",

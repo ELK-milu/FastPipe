@@ -191,8 +191,6 @@ class AsyncMessageQueueManager():
 
             self._queues[context.request_id] = queue
             self._contexts[context.request_id] = context
-
-            print(f"为请求 {context.request_id} 创建队列")
             return queue
 
     async def get_queue_by_request_id(self, request_id: str) -> Optional[AsyncMessageQueue]:
