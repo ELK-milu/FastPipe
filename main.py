@@ -29,7 +29,7 @@ app.include_router(GPTSovits.router)
 # 创建Pipeline
 pipeline = PipeLine.create_pipeline(
     Dify_LLM_Module,
-    #GPTSovits_Module
+    GPTSovits_Module
 )
 
 async def StartUp():

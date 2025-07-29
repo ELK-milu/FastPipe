@@ -26,36 +26,41 @@ class Dify_LLM_Module(LLMModule):
 
         def GetTempMsg(self):
             # 使用正向预查分割保留标点符号
-            split_pattern = r'(?<=[，,!?。！？])'
-            fragments = re.split(split_pattern, self.tempResponse)
+            split_pattern = "，,!?。！？"
+            # 作为预选的标点符号，需要满足特定条件才会切分
+            binal_split_pattern = "、：:"
+            final_split_pattern = fr'(?<=[{split_pattern}{binal_split_pattern}])'
+            fragments = re.split(final_split_pattern, self.tempResponse)
 
             # 收集完整句子和未完成部分
             complete_sentences = []
+
+            print("fragments:" + str(fragments))
             pending_fragment = ''
 
             for frag in fragments:
                 #print("frag:" + frag)
-                if re.search(r'[，,!?。！？]$', frag):
+                if re.search(rf'[{split_pattern}]$', frag):
                     complete_sentences.append(frag)
                     # 一旦有完整句子就返回，不再等待更多句子
                     if len(complete_sentences) >= self.WaitCount:
                         self.sentences = complete_sentences[:self.WaitCount]
                         self.tempResponse = ''.join(fragments[len(complete_sentences):])
                         return self.sentences
-                elif re.search(r'[、：:]$', frag):
+                elif re.search(rf'[{binal_split_pattern}]$', frag):
                     if len(frag) >= 10:
                         complete_sentences.append(frag)
                         # 一旦有完整句子就返回，不再等待更多句子
                         if len(complete_sentences) >= self.WaitCount:
                             self.sentences = complete_sentences[:self.WaitCount]
                             self.tempResponse = ''.join(fragments[len(complete_sentences):])
+                            print("tempResponse:" + self.tempResponse)
                             return self.sentences
                     else:
                         pending_fragment = frag
                 else:
                     pending_fragment = frag
                     break
-
             # 如果没有完整句子，继续累积
             self.tempResponse = self.tempResponse
             self.sentences = []
@@ -120,8 +125,11 @@ class Dify_LLM_Module(LLMModule):
         if chunk['event'] == 'message':
             answer = str(chunk['answer'])
         elif chunk['event'] == 'message_end':
+            # 此处信息在丢入MessageWrapper后会被返回给pipeline，但不会返回给下一个模块
             temp_chunk.SetEnd(True)
-            return temp_chunk.GetFinalContent()
+            # 把未输出的部分全部输出
+            temp_chunk.response += temp_chunk.tempResponse
+            return temp_chunk.tempResponse
 
         if not temp_chunk.conversation_id:
             temp_chunk.conversation_id = chunk["conversation_id"]
@@ -138,9 +146,9 @@ class Dify_LLM_Module(LLMModule):
 
     async def finally_func(self,message: ModuleMessage):
         await asyncio.sleep(0)
-        request = self.request_chunks[message.request_id]
-        finaltext = request.GetResponse()
-        #await self.MessageWrapper
+        #temp_chunk = self.request_chunks[message.request_id]
+        #finalcontent =  temp_chunk.GetFinalContent()
+        #await self.module_output(finalcontent, message)
 
     async def MessageWrapper(self, input_data: str, message: ModuleMessage) -> tuple[ModuleMessage, AsyncQueueMessage]:
         # 封装Message的函数
