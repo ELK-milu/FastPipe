@@ -28,6 +28,7 @@ def get_payload(text:str,ref_audio_path:str="./GPT_SoVITS/models/佼佼仔_中�
         "top_p": 1,
         "temperature": 1,
         "text_split_method": "cut5",
+        "media_type": "wav",
         "return_fragment": False,  # 确保分段返回片段
         "batch_size": 8,  # 增加batch_size以加速处理
         "batch_threshold": 0.75,
@@ -60,15 +61,8 @@ class GPTSovitsStreamGenerator(StreamGenerator):
                     headers=self.header
             ) as response:
                 # 收集所有 chunks
-                chunks = []
                 async for chunk in response.aiter_bytes(chunk_size=None):
-                    if chunk:
-                        if process_func:
-                            chunk = process_func(chunk)
-                        chunks.append(chunk)
-                # 合并所有 chunks 并一次性返回
-                full_data = b''.join(chunks)
-                yield full_data
+                    yield chunk
         except Exception as e:
             raise e
         finally:

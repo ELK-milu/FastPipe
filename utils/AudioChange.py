@@ -70,3 +70,43 @@ def convert_wav_to_pcm_simple(wav_bytes: bytes,set_sample_rate: int) -> bytes:
         return b''
 
 
+# 简化版本，假设输入为16位单声道PCM
+def resample_raw_simple(raw_bytes: bytes, original_sample_rate: int, target_sample_rate: int) -> bytes:
+    """简化版raw音频重采样函数，假设16位单声道PCM格式
+
+    参数：
+        raw_bytes: 输入的raw音频字节流（16位单声道PCM）
+        original_sample_rate: 原始采样率
+        target_sample_rate: 目标采样率
+
+    返回：
+        bytes: 重采样后的raw格式字节流
+    """
+    try:
+        # 将字节流转换为int16数组
+        audio_data = np.frombuffer(raw_bytes, dtype=np.int16)
+
+        # 归一化到[-1, 1]范围
+        audio_data = audio_data.astype(np.float32) / 32767.0
+
+        # 如果采样率相同，直接返回
+        if original_sample_rate == target_sample_rate:
+            resampled_data = (audio_data * 32767.0).astype(np.int16)
+            return resampled_data.tobytes()
+
+        # 使用resampy进行重采样
+        resampled_audio = resampy.resample(
+            x=audio_data,
+            sr_orig=original_sample_rate,
+            sr_new=target_sample_rate
+        )
+
+        # 限制音频数据范围并转换为16位整数
+        resampled_audio = np.clip(resampled_audio, -1.0, 1.0)
+        resampled_data = (resampled_audio * 32767.0).astype(np.int16)
+
+        return resampled_data.tobytes()
+
+    except Exception as e:
+        print(f"重采样失败: {e}")
+        return b''

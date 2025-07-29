@@ -61,24 +61,32 @@ class BaseModule(ABC):
                 else:
                     final_chunk = None
                 if final_chunk:
-                    next_model_message,pipeline_message = await self.MessageWrapper(final_chunk, message)
-                    if self.pipeline:
-                        await self.PutToPipe(pipeline_message)
-                    if self.nextModel:
-                        #TODO:
-                        # 用协程并发启动下一个模块
-                        # 此处不用协程可以等待文本和音频一起返回，
-                        # 设计上来说应当使用协程的，但是目前协程尚有bug。若使用await等待，则pipeline在await ModuleEntry后会阻塞等待直到所有modules的main_loop执行完毕再返回end信号
-                        # 但是此处若将ModuleEntry用协程并发，会导致所有模块的await mainloop执行完毕（以PutToPipe为终点），但是实现并发的协程还未执行完毕
-                        # pipeline在得到await ModuleEntry[0]的返回结果后，认为已经执行完毕了，在finally返回end信号导致队列被提前删除，导致并发执行的main_loop无法PutToPipe报错
-                        #task2 = asyncio.create_task(self.nextModel.ModuleEntry(next_model_message))
-                        await self.nextModel.ModuleEntry(next_model_message)
+                    await self.module_output(final_chunk, message)
         except Exception as e:
             raise e
+        finally:
+            await self.finally_func(message)
+
+    async def module_output(self, final_chunk:Any, message: ModuleMessage):
+        next_model_message, pipeline_message = await self.MessageWrapper(final_chunk, message)
+        if self.pipeline:
+            await self.PutToPipe(pipeline_message)
+        if self.nextModel:
+            # TODO:
+            # 用协程并发启动下一个模块
+            # 此处不用协程可以等待文本和音频一起返回，
+            # 设计上来说应当使用协程的，但是目前协程尚有bug。若使用await等待，则pipeline在await ModuleEntry后会阻塞等待直到所有modules的main_loop执行完毕再返回end信号
+            # 但是此处若将ModuleEntry用协程并发，会导致所有模块的await mainloop执行完毕（以PutToPipe为终点），但是实现并发的协程还未执行完毕
+            # pipeline在得到await ModuleEntry[0]的返回结果后，认为已经执行完毕了，在finally返回end信号导致队列被提前删除，导致并发执行的main_loop无法PutToPipe报错
+            # task2 = asyncio.create_task(self.nextModel.ModuleEntry(next_model_message))
+            await self.nextModel.ModuleEntry(next_model_message)
 
     @abstractmethod
     async def type_show(self, input_data: Any)->Any:
         """重写这个代码，不用任何内容，通过指定Any的输入输出来告诉pipeline该模块接受的输入输出类型"""
+        pass
+
+    async def finally_func(self,message: ModuleMessage):
         pass
 
     @abstractmethod
