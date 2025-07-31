@@ -6,13 +6,13 @@ from schemas.request import AwakeModel
 from services import handle_http_exceptions, handle_streaming_http_exceptions
 from services.TTS.GPTSovits.Service import get_payload, GPTSovitsStreamGenerator, generate_stream, \
     GPTSovitsFullGenerator
+from settings import CONFIG
 from utils.httpManager import HTTPSessionManager
 
 router = APIRouter(prefix='')
 
-BASE_URL = "http://127.0.0.1:8090/tts"
+BASE_URL = CONFIG["TTS"]["GPTSoVITS"]["url"]
 httpSessionManager = HTTPSessionManager(base_url=BASE_URL)
-KEY = "app-FHpDSmylxvZ8rHcdMWo4XgkE"
 HEADER = {
     "Authorization": "",
     "Content-Type": "application/json",
@@ -29,7 +29,7 @@ async def GetStreamGenerator(input_data: str):
                                    payload=get_payload(text = input_data,),
                                    header=HEADER,
                                    method="POST",
-                                   url="http://127.0.0.1:8090/tts")
+                                   url=BASE_URL)
     except Exception as e:
         raise e
 
@@ -41,7 +41,7 @@ async def GetGenerator(input_data: str):
                                    payload=get_payload(text = input_data,),
                                    header=HEADER,
                                    method="POST",
-                                   url="http://127.0.0.1:8090/tts")
+                                   url=BASE_URL)
     except Exception as e:
         raise e
 

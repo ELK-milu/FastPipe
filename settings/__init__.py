@@ -1,4 +1,8 @@
+from typing import Dict
+
 import aiofiles
+
+from utils.ConfigLoader import read_config, get_project_dir
 
 MYSQL_HOST = '127.0.0.1'
 MYSQL_PORT = 3306
@@ -34,5 +38,8 @@ from datetime import timedelta
 JWT_SECRET_KEY = "sdfdasdasdasdsf"
 JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=5)
 JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=15)
+
+CONFIG_NAME = "Config.yaml"
+CONFIG: Dict = read_config(get_project_dir() + f"/../Configs/{CONFIG_NAME}")
 
 

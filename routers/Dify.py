@@ -1,19 +1,21 @@
 import httpx
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
+
 from schemas.difyRequest import DeleteRequest, RenameRequest, InputRequest
 from services import handle_http_exceptions, handle_streaming_http_exceptions
 from services.LLM.Dify.Service import get_payload, DifyStreamGenerator
+from settings import CONFIG
 from utils.httpManager import HTTPSessionManager
 
 router = APIRouter(prefix='')
 
-BASE_URL = "http://192.168.30.46/v1"
-httpSessionManager = HTTPSessionManager(base_url="http://192.168.30.46/v1/chat-messages")
+BASE_URL = CONFIG["LLM"]["Dify"]["url"]
+httpSessionManager = HTTPSessionManager(base_url=f"{BASE_URL}/chat-messages")
 #KEY = "app-FHpDSmylxvZ8rHcdMWo4XgkE"
 
 # 佼佼仔
-KEY = "app-uZdChxVBRe32nk5LvoMiqYSk"
+KEY = CONFIG["LLM"]["Dify"]["headerkey"]
 
 HEADER = {
     'Authorization': f'Bearer {KEY}',
@@ -32,7 +34,7 @@ async def GetGenerator(input_data: str):
                                    payload=get_payload(input_data),
                                    header=HEADER,
                                    method="POST",
-                                   url="http://192.168.30.46/v1/chat-messages")
+                                   url=f"{BASE_URL}/chat-messages")
     except Exception as e:
         raise e
 

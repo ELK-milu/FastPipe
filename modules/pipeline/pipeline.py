@@ -19,9 +19,9 @@ class PipeLine:
         self.consumer_task = None
         self.queue_manager = AsyncMessageQueueManager(cleanup_interval=5,
                                                       max_queue_disactive_age=5)
+        print(self.Validate())
 
     async def StartUp(self):
-        print(self.Validate())
         #await self.queue_manager.start()
         self.queue_manager.remove_queue_callback = self.queue_end
 

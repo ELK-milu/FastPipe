@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import json
 import time
@@ -23,7 +24,7 @@ app = FastAPI(lifespan=lifespan)
 from loguru import logger
 
 # app.add_middleware(BaseHTTPMiddleware,dispatch=db_session_middleware)
-# app.include_router(seckill.router)
+
 app.include_router(Dify.router)
 app.include_router(GPTSovits.router)
 # 创建Pipeline
@@ -31,6 +32,8 @@ pipeline = PipeLine.create_pipeline(
     Dify_LLM_Module,
     GPTSovits_Module
 )
+
+
 
 async def StartUp():
     await Dify.StartUp()
@@ -43,6 +46,7 @@ async def root():
 
 
 @app.get("/startup")
+@handle_streaming_http_exceptions
 async def root():
     await StartUp()
     return {"message": "Hello World"}
@@ -54,6 +58,7 @@ async def process_input(user: str):
 
 
 @app.get("/schema")
+@handle_streaming_http_exceptions
 async def get_schema():
     """返回API请求模式"""
     return PipeLineRequest.model_json_schema()
@@ -158,4 +163,4 @@ async def concurrent_stream_response(request: PipeLineRequest):
 
 
 if __name__ == '__main__':
-    uvicorn.run(app, host=FASTAPI_HOST, port=FASTAPI_PORT)
+    uvicorn.run("main:app", host=FASTAPI_HOST, port=FASTAPI_PORT,workers=1)

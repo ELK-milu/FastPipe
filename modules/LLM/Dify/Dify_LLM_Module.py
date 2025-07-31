@@ -3,6 +3,8 @@ import json
 import re
 from typing import Optional
 
+import loguru
+
 from modules import BaseModule, ModuleMessage, ModuleChunkProtocol
 from modules.LLM import LLMModule
 from routers.Dify import GetGenerator
@@ -34,38 +36,28 @@ class Dify_LLM_Module(LLMModule):
 
             # 收集完整句子和未完成部分
             complete_sentences = []
-
-            print("fragments:" + str(fragments))
             pending_fragment = ''
-
             for frag in fragments:
-                #print("frag:" + frag)
+                if len(complete_sentences) >= self.WaitCount:
+                    self.sentences = fragments
+                    # self.tempResponse等于将未选用的部分句子拼接起来
+                    self.tempResponse = ""
+                    return self.sentences
                 if re.search(rf'[{split_pattern}]$', frag):
                     complete_sentences.append(frag)
-                    # 一旦有完整句子就返回，不再等待更多句子
-                    if len(complete_sentences) >= self.WaitCount:
-                        self.sentences = complete_sentences[:self.WaitCount]
-                        self.tempResponse = ''.join(fragments[len(complete_sentences):])
-                        return self.sentences
                 elif re.search(rf'[{binal_split_pattern}]$', frag):
                     if len(frag) >= 10:
                         complete_sentences.append(frag)
-                        # 一旦有完整句子就返回，不再等待更多句子
-                        if len(complete_sentences) >= self.WaitCount:
-                            self.sentences = complete_sentences[:self.WaitCount]
-                            self.tempResponse = ''.join(fragments[len(complete_sentences):])
-                            print("tempResponse:" + self.tempResponse)
-                            return self.sentences
                     else:
-                        pending_fragment = frag
+                        pending_fragment += frag
                 else:
-                    pending_fragment = frag
+                    pending_fragment += frag
                     break
+
             # 如果没有完整句子，继续累积
             self.tempResponse = self.tempResponse
             self.sentences = []
             return self.sentences
-
         def ReadyToResponse(self) -> bool:
             if (self.GetTempMsg() == []):
                 return False
@@ -179,3 +171,10 @@ class Dify_LLM_Module(LLMModule):
         """
         print("response:" + str(response))
         return response
+
+    async def NextModuleMessageWrapper(self, input_data:str,message:ModuleMessage)->ModuleMessage:
+        """ModuleMessage的封装方法"""
+        message.type = "str"
+        message.body = input_data
+        loguru.logger.info(f"[Dify_LLM_Module] output: {message.body}")
+        return message
