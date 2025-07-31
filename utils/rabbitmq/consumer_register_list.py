@@ -13,13 +13,14 @@ class RabbitMQConsumerRegister(metaclass=SingletonMeta):
         self.consumerDict = consumerDict if consumerDict is not None else {}
         self.consumerPool : Queue[RabbitMQConsumer] = Queue()  # 用于存储消费者池
 
-    def add_consumer(self, consumerName:str,queue_name: str, auto_delete: bool = True,durable:bool=False, message_handler=None):
+    def add_consumer(self, consumerName:str,queue_name: str, auto_delete: bool = True,durable:bool=False, message_handler=None,no_ack: bool = True):
         """添加消费者"""
         if self.consumerDict is None:
             self.consumerDict = {}
 
         if consumerName in self.consumerDict:
             raise ValueError(f"Consumer {consumerName} already exists.")
+
 
         try:
             # 检查池中是否有可用的消费者
@@ -33,7 +34,8 @@ class RabbitMQConsumerRegister(metaclass=SingletonMeta):
                 consumer = RabbitMQConsumer(queue_name=queue_name,
                                             auto_delete=auto_delete,
                                             durable=durable,
-                                            message_handler=message_handler)
+                                            message_handler=message_handler,
+                                            no_ack=no_ack)
             self.consumerDict[consumerName] = consumer
         except Exception as e:
             raise ValueError(f"Failed to add consumer {consumerName}: {e}")

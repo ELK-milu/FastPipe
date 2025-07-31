@@ -13,10 +13,6 @@ class PipeLineRequest(RequestModel):
     text:str
     Entry: int
 
-    # Optional fields with default values
-    #streamly: bool = False
-    #temperature: float = 0.7
-    #max_length: int = 100
     conversation_id: str = ""
     message_id: str = ""
 
