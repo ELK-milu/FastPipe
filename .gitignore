@@ -2,3 +2,5 @@
 /.idea/
 .wav
 .pyc
+/Configs/*.yaml
+*.log
