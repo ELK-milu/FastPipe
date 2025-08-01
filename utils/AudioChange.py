@@ -45,6 +45,8 @@ def convert_wav_to_pcm_simple(wav_bytes: bytes,set_sample_rate: int) -> bytes:
     返回：
         bytes: PCM格式的字节流（单声道/16kHz/16位）
     """
+    if wav_bytes is None or len(wav_bytes) == 0:
+        return b''
     try:
         with BytesIO(wav_bytes) as input_stream:
             # 读取音频数据

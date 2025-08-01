@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict
 
 
@@ -9,7 +11,7 @@ class PipeLineRequest(RequestModel):
     model_config = ConfigDict(extra='allow')
     # Required fields
     user: str
-    Input: str
+    Input: Any
     text:str
     Entry: int
 

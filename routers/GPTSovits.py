@@ -34,11 +34,11 @@ async def GetStreamGenerator(input_data: str):
         raise e
 
 
-async def GetGenerator(input_data: str):
+async def GetGenerator(input_data: str,ref_audio_path:str = "./GPT_SoVITS/models/佼佼仔_中立.wav", prompt_text:str = "今天，我将带领大家穿越时空，去到未来的杭州。"):
     try:
         session = await httpSessionManager.get_client()
         return GPTSovitsFullGenerator(client=session,
-                                   payload=get_payload(text = input_data,),
+                                   payload=get_payload(text = input_data,ref_audio_path=ref_audio_path, prompt_text=prompt_text),
                                    header=HEADER,
                                    method="POST",
                                    url=BASE_URL)

@@ -97,7 +97,15 @@ class Dify_LLM_Module(LLMModule):
 
     async def handle_request(self, request: ModuleMessage):
         """对模块输入请求进行内容提取的方法"""
-        return request.body
+        input = request.body
+        context = await self.pipeline.get_context(request_id=request.request_id)
+        post_dict = context.request_dict
+        if post_dict.get("LLM") is None:
+            print("未找到TTS")
+            return None
+        if post_dict["LLM"].get("enable",True) is False:
+            return None
+        return input
 
     async def GetGenerator(self, message: ModuleMessage, input_data: str) -> Optional[StreamGenerator]:
         if input_data is None:

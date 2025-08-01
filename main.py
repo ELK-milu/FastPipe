@@ -4,9 +4,12 @@ import json
 import time
 import uuid
 import base64
+
+import httpx
 import uvicorn
 from fastapi import FastAPI
 from starlette.responses import StreamingResponse, JSONResponse
+import pydantic
 
 from hooks.lifespan import lifespan
 from modules.TTS.GPTSovits.GPTSovits_Module import GPTSovits_Module
@@ -54,6 +57,7 @@ async def root():
 @app.get("/heartbeat")
 async def process_input(user: str):
     """心跳请求"""
+    await pipeline.heartbeat()
     return {"message": "Success"}
 
 
@@ -102,6 +106,7 @@ async def concurrent_stream_response(request: PipeLineRequest):
                         }
                     elif message_chunk.type == "audio":
                         # 二进制数据（如音频）编码为base64
+
                         if isinstance(chunk, bytes):
                             wav_audio = convert_wav_to_pcm_simple(chunk, set_sample_rate=24000)
                             response_data = {

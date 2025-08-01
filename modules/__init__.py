@@ -46,6 +46,8 @@ class BaseModule(ABC):
         #await asyncio.create_task(self.main_loop(request))
         await self.main_loop(request)
 
+    async def heartbeat(self):
+        pass
 
     async def main_loop(self, message: ModuleMessage) -> Any:
         """模块的主要处理逻辑，子类必须实现"""
