@@ -1,3 +1,4 @@
+import asyncio
 import time
 from typing import Any, Optional
 
@@ -38,8 +39,9 @@ class GPTSovits_Module(TTSModule):
         async for chunk in session.generate(self.ProcessResponseFunc):
             pass
 
-    def ChunkWrapper(self, message: ModuleMessage,chunk:bytes):
+    async def ChunkWrapper(self, message: ModuleMessage,chunk:bytes):
         """chunk最终输出前的封装方法"""
+        await asyncio.sleep(0)
         return chunk
 
     async def GetGenerator(self, message: ModuleMessage,input_data:str)->Optional[StreamGenerator]:

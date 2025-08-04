@@ -33,10 +33,6 @@ class TTSModule(BaseModule):
         return None
 
 
-    def ChunkWrapper(self, message: ModuleMessage,chunk:Any):
-        """chunk最终输出前的封装方法"""
-        return chunk
-
     async def PipeLineMessageWrapper(self, input_data:Any,message:ModuleMessage)->AsyncQueueMessage:
         """PipeLineMessage的封装方法"""
         queue_message = AsyncQueueMessage(type="audio",

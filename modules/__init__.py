@@ -59,7 +59,7 @@ class BaseModule(ABC):
                 return None
             async for chunk in session.generate(self.ProcessResponseFunc):
                 if chunk:
-                    final_chunk = self.ChunkWrapper(message,chunk)
+                    final_chunk = await self.ChunkWrapper(message,chunk)
                 else:
                     final_chunk = None
                 if final_chunk:
@@ -74,12 +74,6 @@ class BaseModule(ABC):
         if self.pipeline:
             await self.PutToPipe(pipeline_message)
         if self.nextModel:
-            # TODO:
-            # 用协程并发启动下一个模块
-            # 此处不用协程可以等待文本和音频一起返回，
-            # 设计上来说应当使用协程的，但是目前协程尚有bug。若使用await等待，则pipeline在await ModuleEntry后会阻塞等待直到所有modules的main_loop执行完毕再返回end信号
-            # 但是此处若将ModuleEntry用协程并发，会导致所有模块的await mainloop执行完毕（以PutToPipe为终点），但是实现并发的协程还未执行完毕
-            # pipeline在得到await ModuleEntry[0]的返回结果后，认为已经执行完毕了，在finally返回end信号导致队列被提前删除，导致并发执行的main_loop无法PutToPipe报错
             # task2 = asyncio.create_task(self.nextModel.ModuleEntry(next_model_message))
             await self.nextModel.ModuleEntry(next_model_message)
 
@@ -111,8 +105,9 @@ class BaseModule(ABC):
         return None
 
 
-    def ChunkWrapper(self, message: ModuleMessage,chunk:Any):
+    async def ChunkWrapper(self, message: ModuleMessage,chunk:Any):
         """chunk最终输出前的封装方法"""
+        await asyncio.sleep(0)
         return chunk
 
     async def PipeLineMessageWrapper(self, input_data:Any,message:ModuleMessage)->AsyncQueueMessage:

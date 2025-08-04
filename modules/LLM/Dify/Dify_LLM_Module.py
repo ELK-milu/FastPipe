@@ -114,7 +114,7 @@ class Dify_LLM_Module(LLMModule):
         generator = await GetGenerator(input_data)
         return generator
 
-    def ChunkWrapper(self, message: ModuleMessage, chunk: str) -> str:
+    async def ChunkWrapper(self, message: ModuleMessage, chunk: str) -> str:
         """chunk最终输出前的封装方法"""
         if self.request_chunks.get(message.request_id) is None:
             self.request_chunks[message.request_id] = self.ModuleChunk(message.user, message.request_id)
@@ -130,6 +130,14 @@ class Dify_LLM_Module(LLMModule):
             # 把未输出的部分全部输出
             temp_chunk.response += temp_chunk.tempResponse
             return temp_chunk.tempResponse
+        elif chunk['event'] == 'agent_log':
+            # 对于mcp调用结果直接返回给pipeline
+            queue_message = AsyncQueueMessage(type="tool",
+                                              body=chunk,
+                                              user=message.user,
+                                              request_id=message.request_id)
+            await self.pipeline.put_message(queue_message)
+            return ""
 
         if not temp_chunk.conversation_id:
             temp_chunk.conversation_id = chunk["conversation_id"]

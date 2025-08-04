@@ -33,7 +33,7 @@ app.include_router(GPTSovits.router)
 # 创建Pipeline
 pipeline = PipeLine.create_pipeline(
     Dify_LLM_Module,
-    GPTSovits_Module
+    #GPTSovits_Module
 )
 
 
@@ -135,6 +135,11 @@ async def concurrent_stream_response(request: PipeLineRequest):
                         logger.error(str(chunk))
                         response_data = {
                             "type": "error",
+                            "chunk": str(chunk)
+                        }
+                    elif message_chunk.type == "tool":
+                        response_data = {
+                            "type": "tool",
                             "chunk": str(chunk)
                         }
                     response_data = json.dumps(response_data, ensure_ascii=False)

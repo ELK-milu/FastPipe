@@ -15,7 +15,7 @@ async def awake():
     task = asyncio.create_task(awake_post())
 
 async def awake_post():
-    await asyncio.sleep(2)
+    await asyncio.sleep(0.5)
     async with httpx.AsyncClient() as client:
         url = f"http://{FASTAPI_HOST}:{FASTAPI_PORT}/startup"
         response = await client.get(url)

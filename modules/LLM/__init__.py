@@ -1,3 +1,4 @@
+import asyncio
 from abc import abstractmethod
 from typing import Optional, Any
 
@@ -31,11 +32,6 @@ class LLMModule(BaseModule):
     def ProcessResponseFunc(self, chunk:Any)->Any:
         """处理响应chunk的方法"""
         return None
-
-
-    def ChunkWrapper(self, message: ModuleMessage,chunk:Any):
-        """chunk最终输出前的封装方法"""
-        return chunk
 
     async def PipeLineMessageWrapper(self, input_data:Any,message:ModuleMessage)->AsyncQueueMessage:
         """PipeLineMessage的封装方法"""
