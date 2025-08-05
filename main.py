@@ -33,7 +33,7 @@ app.include_router(GPTSovits.router)
 # 创建Pipeline
 pipeline = PipeLine.create_pipeline(
     Dify_LLM_Module,
-    #GPTSovits_Module
+    GPTSovits_Module
 )
 
 
@@ -138,9 +138,13 @@ async def concurrent_stream_response(request: PipeLineRequest):
                             "chunk": str(chunk)
                         }
                     elif message_chunk.type == "tool":
+                        #print(chunk)
+                        tool_output = chunk["data"]["data"]["output"]
+                        #print("tool_output:", tool_output)
+                        final_type = await get_tool_response_type(tool_output)
                         response_data = {
-                            "type": "tool",
-                            "chunk": str(chunk)
+                            "type": final_type,
+                            "chunk": tool_output["tool_response"]
                         }
                     response_data = json.dumps(response_data, ensure_ascii=False)
                     yield f"data: {response_data}\n\n"
@@ -169,6 +173,10 @@ async def concurrent_stream_response(request: PipeLineRequest):
             'Cache-Control': 'no-cache',
         }
     )
+
+async def get_tool_response_type(tool_output: dict) -> str:
+    if "pic" in tool_output['tool_call_name']:
+        return "image"
 
 
 

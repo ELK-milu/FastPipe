@@ -39,23 +39,34 @@ def extract_response(response):
     return message
 
 
+def check_mcp_pattern(s:str):
+    """
+    检查字符串是否以 'CALL' 开头且以 'tool' 结尾
+    """
+    s = s.strip()
+    return s.startswith('CALL') and s.endswith('tool')
+
 def extract_complete_response(response):
     decoded_response = response.decode('utf-8')
     prefix = 'data: {"event": "message'
     agent_mcp_prefix = 'data: {"event": "agent_log"'
     if decoded_response.strip().startswith(prefix):
         data = decoded_response[6:]
-        # print(data)
+        #print("extract_complete_response:" + data)
         json_data = json.loads(data)
         if json_data['event'] == 'message' or json_data['event'] == 'message_end':
             return json_data
     elif decoded_response.strip().startswith(agent_mcp_prefix):
         data = decoded_response[6:]
         json_data = json.loads(data)
-        if json_data['data']['status'] == 'success':
+        agent_log_data = json_data['data']
+        if check_mcp_pattern(agent_log_data['label']):
             #final_json = json_data['data']['data']['output']['tool_response']['tool_response']
             # 直接返回全部信息
-            return json_data
+            if agent_log_data['status'] == 'success':
+                return json_data
+
+        return ""
     else:
         return ""
 
@@ -109,3 +120,9 @@ class DifyStreamGenerator(StreamGenerator):
             raise
         finally:
             final_time = time.time()
+            # 最终输出结束还需要清理缓存区
+            if process_func:
+                final_chunk = process_func(self._buffer)
+            else:
+                final_chunk = json.loads(self._buffer.decode('utf-8')[6:])
+            yield final_chunk

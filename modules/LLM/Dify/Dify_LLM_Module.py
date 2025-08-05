@@ -14,6 +14,11 @@ from utils.AsyncQueue import AsyncQueueMessage
 
 
 class Dify_LLM_Module(LLMModule):
+
+    def __init__(self):
+        super().__init__()
+        self.ENDSIGN = "DIFY_MESSAGE_END"
+
     class ModuleChunk(ModuleChunkProtocol):
         def __init__(self, user: str, request_id: str):
             self.user = user
@@ -101,7 +106,7 @@ class Dify_LLM_Module(LLMModule):
         context = await self.pipeline.get_context(request_id=request.request_id)
         post_dict = context.request_dict
         if post_dict.get("LLM") is None:
-            print("未找到TTS")
+            loguru.logger.error("未找到LLM配置")
             return None
         if post_dict["LLM"].get("enable",True) is False:
             return None
@@ -129,7 +134,7 @@ class Dify_LLM_Module(LLMModule):
             temp_chunk.SetEnd(True)
             # 把未输出的部分全部输出
             temp_chunk.response += temp_chunk.tempResponse
-            return temp_chunk.tempResponse
+            return self.ENDSIGN
         elif chunk['event'] == 'agent_log':
             # 对于mcp调用结果直接返回给pipeline
             queue_message = AsyncQueueMessage(type="tool",
@@ -161,7 +166,7 @@ class Dify_LLM_Module(LLMModule):
     async def MessageWrapper(self, input_data: str, message: ModuleMessage) -> tuple[ModuleMessage, AsyncQueueMessage]:
         # 封装Message的函数
         # 不要把作为结束的标识丢给下一个模块了
-        if "conversation_id" in input_data:
+        if  input_data is self.ENDSIGN:
             next_model_message = await self.NextModuleMessageWrapper(None, message)
         else:
             next_model_message = await self.NextModuleMessageWrapper(input_data, message)
@@ -170,7 +175,6 @@ class Dify_LLM_Module(LLMModule):
 
     async def PutToPipe(self, input_data: AsyncQueueMessage):
         """将数据写入PipeLine的队列中"""
-        temp_text = input_data.body
         request_chunk = self.request_chunks[input_data.request_id]
         final_json = request_chunk.GetFinalContent()
         input_data.body = final_json
@@ -185,7 +189,7 @@ class Dify_LLM_Module(LLMModule):
         """
         处理流式和非流式响应，提取思考内容和最终响应
         """
-        print("response:" + str(response))
+        #print("response:" + str(response))
         return response
 
     async def NextModuleMessageWrapper(self, input_data:str,message:ModuleMessage)->ModuleMessage:
