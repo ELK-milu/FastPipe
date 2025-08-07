@@ -32,6 +32,12 @@ from utils.gethost import get_host_ip
 FASTAPI_HOST = get_host_ip()
 FASTAPI_PORT = 3421
 
+def set_port(port:int):
+    global FASTAPI_PORT
+    FASTAPI_PORT = port
+def GetPort():
+    return FASTAPI_PORT
+
 # refresh token
 from datetime import timedelta
 
@@ -42,4 +48,10 @@ JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=15)
 CONFIG_NAME = "Config.yaml"
 CONFIG: Dict = read_config(get_project_dir() + f"/../Configs/{CONFIG_NAME}")
 
+def set_config(config_name:str):
+    global CONFIG
+    CONFIG = read_config(get_project_dir() + f"/../Configs/{config_name}")
+
+def get_config():
+    return CONFIG
 

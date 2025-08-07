@@ -5,17 +5,17 @@ from fastapi.responses import StreamingResponse
 from schemas.difyRequest import DeleteRequest, RenameRequest, InputRequest
 from services import handle_http_exceptions, handle_streaming_http_exceptions
 from services.LLM.Dify.Service import get_payload, DifyStreamGenerator
-from settings import CONFIG
+from settings import get_config
 from utils.httpManager import HTTPSessionManager
 
 router = APIRouter(prefix='')
 
-BASE_URL = CONFIG["LLM"]["Dify"]["url"]
-httpSessionManager = HTTPSessionManager(base_url=f"{BASE_URL}/chat-messages")
+BASE_URL = None
+httpSessionManager : HTTPSessionManager = HTTPSessionManager()
 #KEY = "app-FHpDSmylxvZ8rHcdMWo4XgkE"
 
 # 佼佼仔
-KEY = CONFIG["LLM"]["Dify"]["headerkey"]
+KEY = None
 
 HEADER = {
     'Authorization': f'Bearer {KEY}',
@@ -24,6 +24,15 @@ HEADER = {
 }
 
 async def StartUp():
+    global BASE_URL, httpSessionManager, KEY, HEADER
+    BASE_URL = get_config()["LLM"]["Dify"]["url"]
+    KEY = get_config()["LLM"]["Dify"]["headerkey"]
+    HEADER = {
+        'Authorization': f'Bearer {KEY}',
+        'Content-Type': 'application/json',
+        'Connection': 'Keep-Alive'
+    }
+    httpSessionManager = HTTPSessionManager(base_url=f"{BASE_URL}/chat-messages")
     await httpSessionManager.get_client()
 
 

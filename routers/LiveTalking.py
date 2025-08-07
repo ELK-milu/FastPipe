@@ -1,20 +1,29 @@
+import asyncio
+
 from fastapi import APIRouter
 from starlette.responses import StreamingResponse
 
 from schemas.request import AwakeModel
 from services.TTS.LiveTalking.Service import LiveTalkingStreamGenerator, get_payload, generate_stream
-from settings import CONFIG
+from settings import get_config
 from utils.httpManager import HTTPSessionManager
 
 router = APIRouter(prefix='')
 
-BASE_URL = CONFIG["TTS"]["LiveTalking"]["url"]
-httpSessionManager = HTTPSessionManager(base_url=f"{BASE_URL}")
+BASE_URL = None
+httpSessionManager : HTTPSessionManager =  HTTPSessionManager()
 HEADER = {
     'Authorization': "",
     'Content-Type': 'application/json',
     'Connection': 'Keep-Alive'
 }
+
+async def StartUp():
+    global BASE_URL, httpSessionManager
+    BASE_URL = get_config()["TTS"]["LiveTalking"]["url"]
+    httpSessionManager = HTTPSessionManager(base_url=f"{BASE_URL}")
+    await asyncio.sleep(0)
+
 
 async def GetGenerator(text: str,sessionid:int,voice:str,emotion:str):
     try:
@@ -23,8 +32,8 @@ async def GetGenerator(text: str,sessionid:int,voice:str,emotion:str):
                                           payload=get_payload(text=text,
                                                               sessionid=sessionid,
                                                               voice=voice,
-                                                              interrupt=CONFIG["TTS"]["LiveTalking"]["interrupt"],
-                                                              type=CONFIG["TTS"]["LiveTalking"]["type"],
+                                                              interrupt=get_config()["TTS"]["LiveTalking"]["interrupt"],
+                                                              type=get_config()["TTS"]["LiveTalking"]["type"],
                                                               emotion=emotion),
                                           header=HEADER,
                                           method="POST",

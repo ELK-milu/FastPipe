@@ -6,7 +6,7 @@ from fastapi import FastAPI
 
 from loguru import logger
 
-from settings import FASTAPI_HOST, FASTAPI_PORT
+from settings import FASTAPI_HOST, FASTAPI_PORT, GetPort
 
 
 #from utils.rabbitmq.rabbit_mq_producer import rabbit_mq_producer
@@ -17,8 +17,9 @@ async def awake():
 async def awake_post():
     await asyncio.sleep(0.5)
     async with httpx.AsyncClient() as client:
-        url = f"http://{FASTAPI_HOST}:{FASTAPI_PORT}/startup"
+        url = f"http://{FASTAPI_HOST}:{GetPort()}/startup"
         response = await client.get(url)
+    await asyncio.sleep(0.5)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
