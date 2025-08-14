@@ -33,7 +33,7 @@ class Dify_LLM_Module(LLMModule):
 
         def GetTempMsg(self):
             # 使用正向预查分割保留标点符号
-            split_pattern = "，,!?。！？"
+            split_pattern = "，,!?。！？(（）)"
             # 作为预选的标点符号，需要满足特定条件才会切分
             binal_split_pattern = "、：:"
             final_split_pattern = fr'(?<=[{split_pattern}{binal_split_pattern}])'

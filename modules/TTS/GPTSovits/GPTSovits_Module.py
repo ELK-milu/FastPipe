@@ -29,15 +29,16 @@ class GPTSovits_Module(TTSModule):
 
     async def heartbeat(self):
         """心跳方法"""
+        pass
         print("GPTSovits_Module心跳")
         reffile = settings.CONFIG["TTS"]["GPTSoVITS"]["reffile"]
         reftext = settings.CONFIG["TTS"]["GPTSoVITS"]["reftext"]
         # TODO:
         #  GPTSoVITS不知为何有长时间不合成后，下一次开启合成就需要额外等待较长时间的情况（1-2秒）
         #  通过触发心跳保持合成小短句（合成时间在0.5秒内），可以通过减少调用频率来保持
-        session = await GetGenerator(input_data="一",ref_audio_path = reffile,prompt_text = reftext)  # 触发心跳，保持连接
-        async for chunk in session.generate(self.ProcessResponseFunc):
-            pass
+        #session = await GetGenerator(input_data="一",ref_audio_path = reffile,prompt_text = reftext)  # 触发心跳，保持连接
+        #async for chunk in session.generate(self.ProcessResponseFunc):
+            #pass
 
     async def ChunkWrapper(self, message: ModuleMessage,chunk:bytes):
         """chunk最终输出前的封装方法"""
