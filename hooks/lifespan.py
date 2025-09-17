@@ -10,21 +10,26 @@ from settings import FASTAPI_HOST, FASTAPI_PORT, GetPort
 
 
 #from utils.rabbitmq.rabbit_mq_producer import rabbit_mq_producer
+async def test():
+    await asyncio.sleep(0)
 
-async def awake():
-    task = asyncio.create_task(awake_post())
+StartUp : callable = test
+Stop : callable = test
 
-async def awake_post():
-    await asyncio.sleep(0.5)
-    async with httpx.AsyncClient() as client:
-        url = f"http://{FASTAPI_HOST}:{GetPort()}/startup"
-        response = await client.get(url)
-    await asyncio.sleep(0.5)
+def SetCallBack(start_callback : callable, stop_callback : callable):
+    global StartUp
+    global Stop
+    StartUp = start_callback
+    Stop = stop_callback
+
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.add("logs/file_{time}.log", rotation="500 MB", enqueue=True, level="INFO")
-    await awake()
+    await asyncio.sleep(0.5)
+    await StartUp()
     """FastAPI lifespan事件管理器"""
     # 启动时执行
     yield
+    await Stop()

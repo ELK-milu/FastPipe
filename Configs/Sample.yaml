@@ -15,5 +15,6 @@ TTS:
     type : "echo"
   GPTSoVITS:
     url: GPTSoVITS的接口地址
+    ws: GPTSoVITS的ws地址
     reffile: "默认的参考音频文件路径"
     reftext: "默认的参考文本内容"

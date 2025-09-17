@@ -133,6 +133,9 @@ class PipeLine:
         for module in self.modules:
             await module.heartbeat()
 
+    async def Stop(self):
+        pass
+
     async def process_request(self,text:str,user:str,request_id: str,type:str="str",entry:int = 0):
         """处理特定请求"""
         try:

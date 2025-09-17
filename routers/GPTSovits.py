@@ -19,6 +19,8 @@ HEADER = {
     'Connection': 'Keep-Alive',
 }
 
+async def Stop():
+    pass
 async def StartUp():
     global BASE_URL, httpSessionManager
     BASE_URL = get_config()["TTS"]["GPTSoVITS"]["url"]

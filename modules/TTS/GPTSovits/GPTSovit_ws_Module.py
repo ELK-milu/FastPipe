@@ -5,12 +5,12 @@ from typing import Any, Optional
 import settings
 from modules import BaseModule, ModuleMessage
 from modules.TTS import TTSModule
-from routers.GPTSovits import GetStreamGenerator, GetGenerator
+from routers.GPTSovits_ws import GetWSGenerator
 from services import StreamGenerator
 from services.TTS.GPTSovits.Service import get_voice, extract_response
 
 
-class GPTSovits_Module(TTSModule):
+class GPTSovits_ws_Module(TTSModule):
     async def type_show(self, input_data: str)->bytes:
         """重写这个代码，不用任何内容，通过指定Any的输入输出来告诉pipeline该模块接受的输入输出类型"""
         pass
@@ -30,15 +30,17 @@ class GPTSovits_Module(TTSModule):
     async def heartbeat(self):
         """心跳方法"""
         pass
+        '''
         print("GPTSovits_Module心跳")
         reffile = settings.CONFIG["TTS"]["GPTSoVITS"]["reffile"]
         reftext = settings.CONFIG["TTS"]["GPTSoVITS"]["reftext"]
         # TODO:
         #  GPTSoVITS不知为何有长时间不合成后，下一次开启合成就需要额外等待较长时间的情况（1-2秒）
         #  通过触发心跳保持合成小短句（合成时间在0.5秒内），可以通过减少调用频率来保持
-        session = await GetGenerator(input_data="一",ref_audio_path = reffile,prompt_text = reftext)  # 触发心跳，保持连接
+        session = await GetWSGenerator(input_data="一",ref_audio_path = reffile,prompt_text = reftext)  # 触发心跳，保持连接
         async for chunk in session.generate(self.ProcessResponseFunc):
             pass
+        '''
 
     async def ChunkWrapper(self, message: ModuleMessage,chunk:bytes):
         """chunk最终输出前的封装方法"""
@@ -52,7 +54,7 @@ class GPTSovits_Module(TTSModule):
         queueRequestContext = await self.pipeline.get_context(request_id=message.request_id)
         request_dict = queueRequestContext.request_dict
         reffile,reftext = get_voice(request_dict)
-        generator = await GetGenerator(input_data, reffile, reftext)
+        generator = await GetWSGenerator(input_data, reffile, reftext)
         now_time = time.time()
         #print("LiveTalking_Module消息发送完毕，耗时:" +  str(now_time - message.start_time) + "秒")
         return generator

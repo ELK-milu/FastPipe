@@ -33,36 +33,60 @@ class Dify_LLM_Module(LLMModule):
 
         def GetTempMsg(self):
             # 使用正向预查分割保留标点符号
-            split_pattern = "，,!?。！？(（）)"
+            # 主要标点符号：句号、问号、感叹号等
+            split_pattern = "，,!?。！？()（）"
             # 作为预选的标点符号，需要满足特定条件才会切分
             binal_split_pattern = "、：:"
-            final_split_pattern = fr'(?<=[{split_pattern}{binal_split_pattern}])'
+
+            # 修复正则表达式，确保正确匹配标点符号后的位置
+            final_split_pattern = rf'(?<=[{re.escape(split_pattern + binal_split_pattern)}])'
             fragments = re.split(final_split_pattern, self.tempResponse)
+
+            # 过滤空字符串
+            fragments = [frag for frag in fragments if frag.strip()]
 
             # 收集完整句子和未完成部分
             complete_sentences = []
             pending_fragment = ''
-            for frag in fragments:
-                if len(complete_sentences) >= self.WaitCount:
-                    self.sentences = fragments
-                    # self.tempResponse等于将未选用的部分句子拼接起来
-                    self.tempResponse = ""
-                    return self.sentences
-                if re.search(rf'[{split_pattern}]$', frag):
-                    complete_sentences.append(frag)
-                elif re.search(rf'[{binal_split_pattern}]$', frag):
-                    if len(frag) >= 10:
-                        complete_sentences.append(frag)
-                    else:
-                        pending_fragment += frag
-                else:
-                    pending_fragment += frag
-                    break
 
-            # 如果没有完整句子，继续累积
-            self.tempResponse = self.tempResponse
-            self.sentences = []
-            return self.sentences
+            for i, frag in enumerate(fragments):
+                # 检查是否已经收集到足够的句子
+                if len(complete_sentences) >= self.WaitCount:
+                    # 将剩余的片段作为未处理部分保留
+                    remaining_fragments = fragments[i:]
+                    self.tempResponse = ''.join(remaining_fragments)
+                    self.sentences = complete_sentences
+                    return self.sentences
+
+                # 检查片段是否以主要标点符号结尾
+                if re.search(rf'[{re.escape(split_pattern)}]$', frag):
+                    # 添加之前累积的待处理片段
+                    complete_sentence = pending_fragment + frag
+                    complete_sentences.append(complete_sentence)
+                    pending_fragment = ''
+                # 检查片段是否以次要标点符号结尾
+                elif re.search(rf'[{re.escape(binal_split_pattern)}]$', frag):
+                    # 只有当长度足够时才作为完整句子
+                    temp_sentence = pending_fragment + frag
+                    if len(temp_sentence.strip()) >= 10:
+                        complete_sentences.append(temp_sentence)
+                        pending_fragment = ''
+                    else:
+                        pending_fragment = temp_sentence
+                else:
+                    # 不以标点符号结尾，累积到待处理片段
+                    pending_fragment += frag
+
+            # 处理循环结束后的情况
+            if complete_sentences:
+                # 如果有完整句子，更新tempResponse为剩余的待处理片段
+                self.tempResponse = pending_fragment
+                self.sentences = complete_sentences
+                return self.sentences
+            else:
+                # 如果没有完整句子，保持原有的tempResponse
+                self.sentences = []
+                return self.sentences
         def ReadyToResponse(self) -> bool:
             if (self.GetTempMsg() == []):
                 return False

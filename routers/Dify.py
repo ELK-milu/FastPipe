@@ -23,6 +23,9 @@ HEADER = {
     'Connection': 'Keep-Alive'
 }
 
+async def Stop():
+    pass
+
 async def StartUp():
     global BASE_URL, httpSessionManager, KEY, HEADER
     BASE_URL = get_config()["LLM"]["Dify"]["url"]

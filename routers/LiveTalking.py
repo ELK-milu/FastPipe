@@ -10,7 +10,7 @@ from utils.httpManager import HTTPSessionManager
 
 router = APIRouter(prefix='')
 
-BASE_URL = None
+URL = None
 httpSessionManager : HTTPSessionManager =  HTTPSessionManager()
 HEADER = {
     'Authorization': "",
@@ -19,7 +19,7 @@ HEADER = {
 }
 
 async def StartUp():
-    global BASE_URL, httpSessionManager
+    global URL, httpSessionManager
     BASE_URL = get_config()["TTS"]["LiveTalking"]["url"]
     httpSessionManager = HTTPSessionManager(base_url=f"{BASE_URL}")
     await asyncio.sleep(0)
@@ -37,7 +37,7 @@ async def GetGenerator(text: str,sessionid:int,voice:str,emotion:str):
                                                               emotion=emotion),
                                           header=HEADER,
                                           method="POST",
-                                          url=f"{BASE_URL}/human")
+                                          url=f"{URL}/human")
     except Exception as e:
         raise e
 

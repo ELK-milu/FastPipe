@@ -6,6 +6,8 @@ from functools import wraps
 import httpx
 from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
+
+from utils.WebSocketClient import WebSocketClient
 from utils.httpManager import HTTPSessionManager
 from loguru import logger
 
@@ -48,7 +50,7 @@ def handle_streaming_http_exceptions(func):
 
 
 class StreamGenerator:
-    def __init__(self, client: httpx.AsyncClient, payload,header,method,url):
+    def __init__(self, client: httpx.AsyncClient|WebSocketClient, payload,header,method,url):
         self.client = client
         self.payload = payload
         self.header = header

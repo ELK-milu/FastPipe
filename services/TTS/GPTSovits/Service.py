@@ -4,10 +4,12 @@ import os
 from typing import AsyncGenerator
 
 import aiofiles
+import websockets
 
 from services import StreamGenerator
 from utils.AudioChange import convert_audio_to_wav, convert_wav_to_pcm_simple
 from utils.ConfigLoader import read_config
+from utils.WebSocketClient import WebSocketClient
 
 
 def GetAbsPath_File():
@@ -134,3 +136,65 @@ async def generate_stream(user, voice) -> AsyncGenerator[str, None]:
 
 def extract_response(intput_data:bytes):
     return intput_data
+
+
+class TTSWebSocketClient(WebSocketClient):
+    async def receive_audio(self):
+        """接收音频数据"""
+        if not self.connected:
+            print("Not connected.")
+            return None
+
+        audio_data = bytearray()
+        try:
+            async for message in self.websocket:
+                if isinstance(message, str):
+                    # 处理文本消息（控制信息）
+                    data = json.loads(message)
+                    msg_type = data.get("type")
+
+                    if msg_type == "start":
+                        print(f"TTS started, media type: {data['data']['media_type']}")
+                    elif msg_type == "end":
+                        print("TTS completed successfully")
+                        break
+                    elif msg_type == "error":
+                        print(f"Error: {data['data']['message']}")
+                        return None
+                    else:
+                        print(f"Info: {data}")
+
+                else:
+                    # 处理二进制消息（音频数据）
+                    audio_data.extend(message)
+                    print(f"Received audio chunk: {len(message)} bytes")
+
+            return bytes(audio_data) if audio_data else None
+        except websockets.exceptions.ConnectionClosed:
+            print("Connection closed during reception")
+            return None
+        except Exception as e:
+            print(f"Error receiving audio: {e}")
+            return None
+
+
+class GPTSovitsWsGenerator(StreamGenerator):
+    async def generate(self, process_func: callable = None):
+        """一次性获取完整音频数据"""
+        try:
+            success = await self.client.send_request_json(
+                body=self.payload,
+            )
+            full_data = None
+            if success:
+                full_data = await self.client.receive_audio()
+
+            if process_func:
+                full_data = process_func(full_data)
+
+            yield full_data
+
+        except Exception as e:
+            await self.client.connect()
+            raise e
+

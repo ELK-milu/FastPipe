@@ -6,6 +6,7 @@ import uuid
 from fastapi import APIRouter
 from loguru import logger
 from starlette.responses import StreamingResponse
+
 from schemas.request import PipeLineRequest
 from services import handle_streaming_http_exceptions
 from utils.AsyncQueue import QueueRequestContext
@@ -14,29 +15,15 @@ from utils.AudioChange import convert_wav_to_pcm_simple
 router = APIRouter(prefix='')
 
 
-async def test():
-    await asyncio.sleep(0)
-
-StartUp : callable = test
 pipeline = None  # 初始化为 None，稍后通过 SetPipeLine 设置
 
 def SetPipeLine(set_Pipeline):
     global pipeline
     pipeline = set_Pipeline
 
-def SetStartUp(func : callable):
-    global StartUp
-    StartUp = func
 
 @router.get("/")
 async def root():
-    return {"message": "Hello World"}
-
-
-@router.get("/startup")
-@handle_streaming_http_exceptions
-async def root():
-    await StartUp()
     return {"message": "Hello World"}
 
 @router.get("/heartbeat")
