@@ -1,4 +1,5 @@
 import httpx
+import asyncio
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from schemas.difyRequest import DeleteRequest, RenameRequest, InputRequest
@@ -21,11 +22,32 @@ HEADER = {
 
 async def Stop():
     pass
+async def periodic_ping():
+    """每秒调用一次ping函数"""
+    while True:
+        try:
+            await ping()
+        except Exception as e:
+            print(f"Ping函数执行异常: {e}")
+        await asyncio.sleep(60)
+
+
 async def StartUp():
     global BASE_URL, httpSessionManager
     BASE_URL = get_config()["TTS"]["GPTSoVITS"]["url"]
     httpSessionManager = HTTPSessionManager(base_url=BASE_URL)
     await httpSessionManager.get_client()
+    # 启动周期性ping任务
+    asyncio.create_task(periodic_ping())
+
+
+async def ping():
+    import settings
+    reffile = settings.CONFIG["TTS"]["GPTSoVITS"]["reffile"]
+    reftext = settings.CONFIG["TTS"]["GPTSoVITS"]["reftext"]
+    session = await GetGenerator(input_data="一", ref_audio_path=reffile, prompt_text=reftext)  # 触发心跳，保持连接
+    async for chunk in session.generate():
+        pass
 
 async def GetStreamGenerator(input_data: str):
     try:

@@ -1,8 +1,8 @@
 import uvicorn
 from fastapi import FastAPI
-from hooks.lifespan import lifespan
+from hooks.lifespan import lifespan, SetCallBack
 from modules.TTS.LiveTalking.LiveTalking_Module import LiveTalking_Module
-from routers import Dify, LiveTalking, GPTSovits, SetPipeLine, SetStartUp, router
+from routers import Dify, LiveTalking, GPTSovits, SetPipeLine, router
 from settings import FASTAPI_HOST, FASTAPI_PORT, set_config, set_port, GetPort
 from modules.LLM.Dify.Dify_LLM_Module import Dify_LLM_Module
 from modules.pipeline.pipeline import PipeLine
@@ -28,7 +28,7 @@ async def StartUp():
 
 if __name__ == '__main__':
     SetPipeLine(pipeline)
-    SetStartUp(StartUp)
+    SetCallBack(StartUp)
     set_port(DEFAULT_PORT)
     set_config(DEFAULT_YAML)
     uvicorn.run(app, host=FASTAPI_HOST, port=GetPort(),workers=1)
