@@ -15,23 +15,23 @@ app = FastAPI(lifespan=lifespan)
 # app.add_middleware(BaseHTTPMiddleware,dispatch=db_session_middleware)
 app.include_router(router)
 app.include_router(Dify.router)
-app.include_router(GPTSovits_ws.router)
+app.include_router(GPTSovits.router)
 # 创建Pipeline
 pipeline = PipeLine.create_pipeline(
     Dify_LLM_Module,
-    GPTSovits_ws_Module
+    GPTSovits_Module
 )
 
 DEFAULT_YAML = "Config.yaml"
 DEFAULT_PORT = 3421
 async def StartUp():
     await Dify.StartUp()
-    await GPTSovits_ws.StartUp()
+    await GPTSovits.StartUp()
     await pipeline.StartUp()
 
 async def Stop():
     await Dify.Stop()
-    await GPTSovits_ws.Stop()
+    await GPTSovits.Stop()
     await pipeline.Stop()
 
 if __name__ == '__main__':
