@@ -25,6 +25,7 @@ pipeline = PipeLine.create_pipeline(
 DEFAULT_YAML = "Config.yaml"
 DEFAULT_PORT = 3421
 async def StartUp():
+    print(f"FastAPI server starting")
     await Dify.StartUp()
     await GPTSovits.StartUp()
     await pipeline.StartUp()
@@ -39,4 +40,4 @@ if __name__ == '__main__':
     SetCallBack(StartUp,Stop)
     set_port(DEFAULT_PORT)
     set_config(DEFAULT_YAML)
-    uvicorn.run("main:app", host=FASTAPI_HOST, port=GetPort(),workers=1)
+    uvicorn.run(app, host=FASTAPI_HOST, port=GetPort(),workers=1)

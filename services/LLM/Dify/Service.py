@@ -48,7 +48,7 @@ def check_mcp_pattern(s:str):
 
 def extract_complete_response(response):
     decoded_response = response.decode('utf-8')
-    prefix = 'data: {"event": "message'
+    prefix = 'data: {"event":"message"'
     agent_mcp_prefix = 'data: {"event": "agent_log"'
     if decoded_response.strip().startswith(prefix):
         data = decoded_response[6:]
@@ -83,6 +83,7 @@ class DifyStreamGenerator(StreamGenerator):
             #print(f"check_sse:{chunk}")
             output_data = self._buffer
             self._buffer = chunk
+            #print(output_data)
             return True,output_data
         else:
             data = chunk[6:]
