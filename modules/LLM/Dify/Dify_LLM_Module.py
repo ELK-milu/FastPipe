@@ -152,7 +152,7 @@ class Dify_LLM_Module(LLMModule):
 
         answer = ""
         if chunk['event'] == 'message':
-            print(chunk)
+            #print(chunk)
             answer = str(chunk['answer'])
         elif chunk['event'] == 'message_end':
             # 此处信息在丢入MessageWrapper后会被返回给pipeline，但不会返回给下一个模块
