@@ -25,6 +25,8 @@ class LiveTalking_Module(TTSModule):
         queueRequestContext = await self.pipeline.get_context(request_id=message.request_id)
         request_dict = queueRequestContext.request_dict
         voice,emotion = get_voice(request_dict)
+        #print("voice:" + voice)
+        #print("emotion:" + emotion)
         generator = await GetGenerator(text=input_data,
                                        sessionid=request_dict.get("TTS").get("sessionid",0),
                                        voice= voice,

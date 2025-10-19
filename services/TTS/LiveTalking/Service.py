@@ -108,8 +108,9 @@ class LiveTalkingStreamGenerator(StreamGenerator):
                     json=self.payload,
                     timeout=300.0,
                     headers=self.header
-            ) as response:
+            ) as response :
                 async for chunk in response.aiter_bytes():
+                    #print(chunk)
                     if chunk:
                         if process_func:
                             chunk = process_func(chunk)

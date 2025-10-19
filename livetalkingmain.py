@@ -24,11 +24,14 @@ async def StartUp():
     await Dify.StartUp()
     await LiveTalking.StartUp()
     await pipeline.StartUp()
-
+async def Stop():
+    await Dify.Stop()
+    #await LiveTalking.Stop()
+    await pipeline.Stop()
 
 if __name__ == '__main__':
     SetPipeLine(pipeline)
-    SetCallBack(StartUp)
+    SetCallBack(StartUp,Stop)
     set_port(DEFAULT_PORT)
     set_config(DEFAULT_YAML)
     uvicorn.run(app, host=FASTAPI_HOST, port=GetPort(),workers=1)

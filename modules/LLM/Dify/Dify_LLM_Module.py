@@ -64,7 +64,7 @@ class Dify_LLM_Module(LLMModule):
                     complete_sentence = pending_fragment + frag
                     complete_sentences.append(complete_sentence)
                     pending_fragment = ''
-                # 检查片段是否以次要标点符号结尾
+                  # 检查片段是否以次要标点符号结尾
                 elif re.search(rf'[{re.escape(binal_split_pattern)}]$', frag):
                     # 只有当长度足够时才作为完整句子
                     temp_sentence = pending_fragment + frag
@@ -154,6 +154,7 @@ class Dify_LLM_Module(LLMModule):
         if chunk['event'] == 'message':
             #print(chunk)
             answer = str(chunk['answer'])
+            #print(answer)
         elif chunk['event'] == 'message_end':
             # 此处信息在丢入MessageWrapper后会被返回给pipeline，但不会返回给下一个模块
             temp_chunk.SetEnd(True)

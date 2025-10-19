@@ -20,8 +20,8 @@ HEADER = {
 
 async def StartUp():
     global URL, httpSessionManager
-    BASE_URL = get_config()["TTS"]["LiveTalking"]["url"]
-    httpSessionManager = HTTPSessionManager(base_url=f"{BASE_URL}")
+    URL = get_config()["TTS"]["LiveTalking"]["url"]
+    httpSessionManager = HTTPSessionManager(base_url=f"{URL}")
     await asyncio.sleep(0)
 
 
